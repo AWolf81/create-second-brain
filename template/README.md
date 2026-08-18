@@ -18,6 +18,37 @@ Optional, once:
 ./scripts/add-cog.sh     # COG agent skills — 33 skills, workers, verifiers
 ```
 
+## Linking your work repos
+
+A vault only helps if the agent working in your *product* repo knows it exists. Link one:
+
+```bash
+./scripts/link-repo.sh ~/code/my-product          # a local path, or
+./scripts/link-repo.sh git@github.com:me/my-product.git
+
+./scripts/link-repo.sh --list
+./scripts/link-repo.sh --unlink my-product
+```
+
+From then on every session in that repo reads the vault before answering about strategy,
+pricing, compliance, or a past decision, and offers to harvest what transfers when a piece
+of work closes.
+
+**Nothing is written into the work repo** — not a file, not a commit, not a `.gitignore`
+line. Committed wiring rides every branch, shows up in every PR diff, and turns into a
+merge-conflict surface on long-lived branches. The link is split instead:
+
+| Half | Where | Committed |
+|---|---|---|
+| Which repos exist, and what they are | `04-projects/<name>/README.md`, `repo:` frontmatter | yes, here |
+| Where the vault sits on *this* machine | `~/.claude/CLAUDE.md` + `~/.claude/skills/second-brain/` | no, machine-local |
+
+That split is also why the durable half is derived rather than registered: the list of
+linked repos is read back out of the project pages, so there is no registry file to drift.
+
+On a second machine, clone the vault and run `./scripts/link-repo.sh` once per repo again —
+the committed half is already there, so it only rebuilds the local half.
+
 ## Writing notes
 
 Open every note with a single `# Heading`. The build derives the page title, graph label,
