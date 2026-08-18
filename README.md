@@ -25,9 +25,14 @@ This is the intersection: agent-readable markdown, published privately, on infra
 ## Two deploy targets
 
 ```bash
-pnpm create @awolf81/second-brain my-brain                 # GitLab Pages (default)
-pnpm create @awolf81/second-brain my-brain --target fly    # Fly + Caddy basic auth
+pnpm create @awolf81/second-brain my-brain                              # GitLab Pages (default)
+pnpm create @awolf81/second-brain my-brain --target fly                 # Fly + Caddy, GitHub Actions
+pnpm create @awolf81/second-brain my-brain --target fly --ci gitlab     # Fly + Caddy, GitLab CI
 ```
+
+The deploy target and the CI system are separate choices. GitLab Pages is published by
+GitLab, so it always uses GitLab CI; the Fly target runs from either, and ships only the
+one you pick.
 
 | | GitLab Pages | Fly |
 |---|---|---|

@@ -1,0 +1,26 @@
+# Build and deploy the vault to Fly from GitLab CI.
+#
+# The Quartz build happens on Fly's remote builder, not here, so this job only
+# validates, installs flyctl and calls deploy. That keeps it well inside the
+# Free tier's 400 compute minutes a month.
+#
+# Required CI/CD variable (Settings → CI/CD → Variables), masked and protected:
+#   FLY_API_TOKEN     from: fly tokens create deploy -x 8760h
+
+image: node:22
+
+deploy:
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    # A note with no title source would fall back to its filename on the site.
+    # Fail here rather than quietly shipping a graph full of "README".
+    - ./scripts/validate-note-titles.sh
+
+    # Fly's documented installer; it pins itself to the current release.
+    - curl -L https://fly.io/install.sh | sh
+    - export FLYCTL_INSTALL="/root/.fly"
+    - export PATH="$FLYCTL_INSTALL/bin:$PATH"
+
+    - flyctl deploy --remote-only

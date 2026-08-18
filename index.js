@@ -29,7 +29,7 @@ const RENAME = {
 }
 
 const argv = process.argv.slice(2)
-const VALUE_FLAGS = new Set(["app", "title", "repo", "target"])
+const VALUE_FLAGS = new Set(["app", "title", "repo", "target", "ci"])
 const flag = (name) => {
   const i = argv.indexOf(`--${name}`)
   return i !== -1 && argv[i + 1] && !argv[i + 1].startsWith("--") ? argv[i + 1] : undefined
@@ -74,6 +74,9 @@ let target = flag("target") ?? "gitlab"
 let app = flag("app") ?? slug(path.basename(target_dir))
 let title = flag("title") ?? "Second Brain"
 let repo = flag("repo") ?? ""
+// Which CI system drives the deploy. GitLab Pages is published by GitLab, so
+// the choice only exists for the Fly target.
+let ci = flag("ci") ?? "github"
 
 if (!has("yes") && stdin.isTTY) {
   const rl = readline.createInterface({ input: stdin, output: stdout })
@@ -81,6 +84,7 @@ if (!has("yes") && stdin.isTTY) {
   app = slug((await rl.question(`Project / app name [${app}]: `)) || app)
   title = (await rl.question(`Site title [${title}]: `)) || title
   repo = (await rl.question(`Repository URL (optional): `)) || repo
+  if (target === "fly") ci = ((await rl.question(`CI — github or gitlab [${ci}]: `)) || ci).trim()
   rl.close()
 }
 
@@ -98,16 +102,30 @@ const replace = {
 }
 
 copyTree(TEMPLATE, target_dir, replace, new Set(["targets"]))
-copyTree(path.join(TARGETS, target), target_dir, replace, new Set(["_setup.md"]))
+copyTree(path.join(TARGETS, target), target_dir, replace, new Set(["_setup.md", "ci-github", "ci-gitlab"]))
+
+// Targets that can be driven by more than one CI system keep each option in its
+// own directory; copy only the chosen one.
+const ciDir = path.join(TARGETS, target, `ci-${ci}`)
+if (fs.existsSync(path.join(TARGETS, target, "ci-github"))) {
+  if (!fs.existsSync(ciDir)) {
+    console.error(`✗ Unknown --ci "${ci}" for target "${target}". Available: github, gitlab`)
+    process.exit(1)
+  }
+  copyTree(ciDir, target_dir, replace)
+}
 
 // Each target documents its own setup; splice it into the README so the reader
 // sees one path, not a menu of options that do not apply to them.
 const setupSrc = path.join(TARGETS, target, "_setup.md")
+const ciNote = ci === "gitlab"
+  ? "\n\nCI runs on GitLab: set `FLY_API_TOKEN` under Settings → CI/CD → Variables (masked, protected) instead of as a GitHub secret."
+  : ""
 if (fs.existsSync(setupSrc)) {
   let setup = fs.readFileSync(setupSrc, "utf8")
   for (const [token, value] of Object.entries(replace)) setup = setup.split(token).join(value)
   const readme = path.join(target_dir, "README.md")
-  fs.writeFileSync(readme, fs.readFileSync(readme, "utf8").replace("<!-- TARGET_SETUP -->", setup.trim()))
+  fs.writeFileSync(readme, fs.readFileSync(readme, "utf8").replace("<!-- TARGET_SETUP -->", setup.trim() + (target === "fly" ? ciNote : "")))
 }
 
 const steps =
