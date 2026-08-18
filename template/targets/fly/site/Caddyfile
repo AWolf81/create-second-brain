@@ -18,7 +18,7 @@
 
 	encode zstd gzip
 
-	# Quartz links to extensionless URLs (/05-knowledge/saas/readme) but emits
+	# Quartz links to extensionless URLs (/05-knowledge/readme) but emits
 	# readme.html, so the bare path has to fall back to the .html file.
 	try_files {path} {path}.html {path}/index.html
 

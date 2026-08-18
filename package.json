@@ -1,11 +1,13 @@
 {
-  "name": "create-second-brain",
+  "name": "@awolf81/create-second-brain",
   "version": "0.1.0",
-  "description": "Scaffold a private knowledge vault with an Obsidian-style graph view — Quartz on Fly, behind basic auth.",
+  "description": "Agent-first knowledge vault — markdown your AI agents read and write, published privately with an Obsidian-style graph view.",
   "type": "module",
   "bin": { "create-second-brain": "index.js" },
   "files": ["index.js", "template"],
   "engines": { "node": ">=18" },
-  "keywords": ["quartz", "obsidian", "knowledge-base", "digital-garden", "fly.io", "template"],
-  "license": "MIT"
+  "publishConfig": { "access": "public" },
+  "keywords": ["quartz", "obsidian", "knowledge-base", "digital-garden", "ai-agents", "claude-code", "gitlab-pages", "fly.io"],
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/AWolf81/create-second-brain.git" }
 }

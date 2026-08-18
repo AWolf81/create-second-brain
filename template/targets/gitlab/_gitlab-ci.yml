@@ -1,0 +1,40 @@
+# Build the vault with Quartz and publish it to GitLab Pages.
+#
+# The site is private: enable Pages access control under
+# Settings → General → Visibility, project features, permissions → Pages,
+# and only project members (Guest or above) can view it.
+#
+# Free tier gives 400 compute minutes per month; a build costs roughly 2-4.
+
+image: node:22
+
+variables:
+  QUARTZ_REF: "075afd3f712da0088a07f5284a7b3aba37dd61b6"
+
+pages:
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  cache:
+    key: quartz-$QUARTZ_REF
+    paths:
+      - .quartz/node_modules/
+  script:
+    # A note with no title source would fall back to its filename on the site.
+    # Fail here rather than quietly shipping a graph full of "README".
+    - ./scripts/validate-note-titles.sh
+
+    # Quartz is cloned at a pinned commit rather than vendored, so the vault
+    # repository stays a vault repository. Bumping QUARTZ_REF is deliberate.
+    - test -d .quartz || git clone --filter=blob:none https://github.com/jackyzha0/quartz.git .quartz
+    - git -C .quartz checkout --detach "$QUARTZ_REF"
+    - cd .quartz && npm ci --no-audit --no-fund && cd ..
+
+    - cp site/quartz.config.yaml .quartz/quartz.config.yaml
+    - ./site/build-content.sh . .quartz/content
+    - cd .quartz && npx quartz build && cd ..
+
+    - rm -rf public && mv .quartz/public public
+  artifacts:
+    paths:
+      - public

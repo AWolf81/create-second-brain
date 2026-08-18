@@ -1,4 +1,10 @@
 node_modules/
 public/
+.quartz/
 .DS_Store
+
+# Obsidian: keep shared settings, ignore per-machine state.
 .obsidian/workspace*
+.obsidian/cache
+.obsidian/plugins/
+.obsidian/community-plugins.json

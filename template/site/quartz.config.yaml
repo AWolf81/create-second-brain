@@ -23,7 +23,7 @@ configuration:
   enablePopovers: true
   analytics: null
   locale: en-US
-  baseUrl: __APP_NAME__.fly.dev
+  baseUrl: __BASE_URL__
   ignorePatterns:
     - private
     - templates

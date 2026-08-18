@@ -1,0 +1,19 @@
+{
+  "collapse-filter": false,
+  "search": "path:04-projects OR path:05-knowledge",
+  "showTags": false,
+  "showAttachments": false,
+  "hideUnresolved": true,
+  "showOrphans": true,
+  "collapse-display": false,
+  "showArrow": false,
+  "textFadeMultiplier": -0.8,
+  "nodeSizeMultiplier": 1.2,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": false,
+  "centerStrength": 0.4,
+  "repelStrength": 12,
+  "linkStrength": 0.8,
+  "linkDistance": 260,
+  "scale": 1
+}
