@@ -37,6 +37,21 @@ fi
 
 if [ -d .obsidian ]; then ok "Obsidian settings present"; else note "no .obsidian/ — the vault still opens, just unconfigured"; fi
 
+# Conventions an agent cannot read are decoration. Check the wiring, not the wording:
+# a dropped import is indistinguishable from having no conventions at all.
+if [ ! -f WHERE-THINGS-LIVE.md ]; then
+  bad "WHERE-THINGS-LIVE.md is missing — agents have no routing rules to follow"
+elif [ ! -f CLAUDE.md ]; then
+  bad "CLAUDE.md is missing — WHERE-THINGS-LIVE.md exists but nothing loads it"
+elif ! grep -q '@WHERE-THINGS-LIVE.md' CLAUDE.md; then
+  bad "CLAUDE.md no longer imports WHERE-THINGS-LIVE.md — re-add the '@WHERE-THINGS-LIVE.md' line"
+else
+  ok "agent conventions wired (CLAUDE.md imports WHERE-THINGS-LIVE.md)"
+  if grep -q '<your tracker>\|<your product repo>' WHERE-THINGS-LIVE.md; then
+    note "WHERE-THINGS-LIVE.md still has <placeholders> — fill in your own tools"
+  fi
+fi
+
 echo
 echo "Site"
 
