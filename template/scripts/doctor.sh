@@ -31,6 +31,11 @@ fi
 
 if [ -d .claude ] || [ -d .agents ]; then
   ok "COG agent skills installed"
+  if ./scripts/check-agent-surface.sh >/dev/null 2>&1; then
+    ok "agent surface check passes"
+  else
+    bad "agent surface check failed — run ./scripts/check-agent-surface.sh"
+  fi
 else
   note "COG not installed — run ./scripts/add-cog.sh if you want the agent skills"
 fi

@@ -32,9 +32,17 @@ and date, and open a fresh `[Unreleased]` above it.
 - `scripts/add-cog.sh`, which installs [COG](https://github.com/huytieu/COG-second-brain)
   from upstream rather than vendoring it, so attribution stays with its authors and COG's
   own updater keeps working. Runs by default; `--no-cog` opts out, and a failed fetch
-  warns rather than aborting the scaffold.
+  warns rather than aborting the scaffold. Merges into directories that already exist —
+  `scripts/` does — rather than skipping them wholesale, so COG's own validators arrive;
+  your files are never overwritten.
 - `.obsidian/` shipped configured: graph filtered to the folders the site publishes,
   wikilinks in the shortest form Quartz resolves, per-machine state gitignored.
+- `scripts/check-agent-surface.sh` and `local-skills.txt`, which reconcile COG's surface
+  validator against skills you add yourself. COG's validator is a publishing gate for
+  COG's own plugin, so your skills make it report an error permanently; registering them
+  in COG's manifests would be undone by `cog-update.sh`. Declaring them here keeps the
+  check expected to pass, which is what makes a red result mean something. It no-ops
+  cleanly when COG, or COG's manifests, are absent.
 - Fonts downloaded at build time and self-hosted, so no reader's browser calls Google
   Fonts.
 - Quartz cloned at a pinned commit rather than vendored, because its config schema changes
