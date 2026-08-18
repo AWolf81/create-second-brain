@@ -42,6 +42,32 @@ fi
 
 if [ -d .obsidian ]; then ok "Obsidian settings present"; else note "no .obsidian/ — the vault still opens, just unconfigured"; fi
 
+# A link has two halves and only one of them is committed. The failure this catches
+# is a fresh clone on a second machine: the vault still lists the repos, so nothing
+# looks wrong, while the agent side of the wiring does not exist at all.
+CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+if [ ! -x scripts/link-repo.sh ]; then
+  note "scripts/link-repo.sh missing — cannot link work repos"
+else
+  linked="$(./scripts/link-repo.sh --list 2>/dev/null | sed -nE 's/^  ([^ ]+) +.*/\1/p')"
+  if [ -z "$linked" ]; then
+    note "no work repos linked — run ./scripts/link-repo.sh <path-or-url>"
+  elif [ ! -f "$CLAUDE_DIR/skills/second-brain/SKILL.md" ] ||
+       ! grep -q 'second-brain:begin' "$CLAUDE_DIR/CLAUDE.md" 2>/dev/null; then
+    bad "$(wc -w <<<"$linked") repo(s) linked here but $CLAUDE_DIR has no wiring — re-run ./scripts/link-repo.sh once per repo"
+  else
+    missing=""
+    while read -r name; do
+      grep -q "\`$name\`" "$CLAUDE_DIR/CLAUDE.md" || missing="$missing $name"
+    done <<<"$linked"
+    if [ -n "$missing" ]; then
+      bad "linked here but not in $CLAUDE_DIR/CLAUDE.md:$missing — re-run ./scripts/link-repo.sh for each"
+    else
+      ok "work repos linked and wired into $CLAUDE_DIR ($(wc -w <<<"$linked"))"
+    fi
+  fi
+fi
+
 # Conventions an agent cannot read are decoration. Check the wiring, not the wording:
 # a dropped import is indistinguishable from having no conventions at all.
 if [ ! -f WHERE-THINGS-LIVE.md ]; then

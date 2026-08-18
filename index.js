@@ -163,6 +163,10 @@ ${steps}
 Then:
 
   ./scripts/doctor.sh       check what is still missing${cogInstalled ? "" : "\n  ./scripts/add-cog.sh      install the COG agent skills"}
+  ./scripts/link-repo.sh ~/code/my-product
+                            point a work repo at this vault, so agents there
+                            read it before answering. Nothing is written into
+                            that repo.
 
 Write notes in 05-knowledge/. Each opens with a '# Heading' — the site derives
 its title, graph label and search entry from it. Nothing else needed.

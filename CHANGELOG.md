@@ -37,6 +37,18 @@ and date, and open a fresh `[Unreleased]` above it.
   your files are never overwritten.
 - `.obsidian/` shipped configured: graph filtered to the folders the site publishes,
   wikilinks in the shortest form Quartz resolves, per-machine state gitignored.
+- `scripts/link-repo.sh`, which links a work repository to the vault so agents working in
+  that repo read it before answering and offer to harvest what transfers. `--list` and
+  `--unlink <slug>` manage the links; `--unlink` keeps the project page and removes only
+  the wiring. The link is split in two: the durable half is a `repo:` key in
+  `04-projects/<name>/README.md`, committed here, and the machine-specific half is the
+  `second-brain` skill plus a marked block in `~/.claude/CLAUDE.md`. The list of linked
+  repos is derived from the project pages rather than kept in a registry file, so there is
+  nothing to drift.
+- `doctor.sh` now reports linked repositories and fails when the vault lists links that
+  `~/.claude` knows nothing about — the state a fresh clone on a second machine lands in,
+  where the vault looks correctly configured and the agent side does not exist.
+
 - `scripts/check-agent-surface.sh` and `local-skills.txt`, which reconcile COG's surface
   validator against skills you add yourself. COG's validator is a publishing gate for
   COG's own plugin, so your skills make it report an error permanently; registering them
@@ -62,6 +74,11 @@ and date, and open a fresh `[Unreleased]` above it.
 - The basic-auth password is hashed with bcrypt at container start and unset before exec,
   so it is absent from the served process's environment and never appears in a process
   list. `BASIC_AUTH_HASH` takes precedence when supplied.
+- Linking a work repo writes **nothing into that repo** — no file, no commit, no
+  `.gitignore` entry. Committed wiring rides every branch, appears in every PR diff and
+  becomes a merge-conflict surface on long-lived branches; the machine-specific half lives
+  in `~/.claude` instead. The bridge skill refuses requests to install itself into a work
+  repo. Linking the vault to itself is refused.
 - Analytics, sitemap, RSS and OG images are off, and responses carry
   `X-Robots-Tag: noindex, nofollow, noarchive`.
 - Caddy logs at `ERROR` only, so note titles do not reach the platform log stream.
