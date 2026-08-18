@@ -1,0 +1,15 @@
+# Skills in .claude/skills/ that are yours, and deliberately absent from COG's
+# redistributable plugin manifests.
+#
+# COG's validate-agent-surface.sh is a publishing gate: it checks that COG's
+# manifest matches the skill tree. Your own skills therefore make it report an
+# error, permanently. Registering them in the manifests would not help — those
+# are framework files that cog-update.sh overwrites, and they describe COG's
+# published plugin, not yours.
+#
+# So list them here instead. scripts/check-agent-surface.sh reconciles this list
+# against the manifest/disk delta, which means the check is expected to PASS —
+# and a red result means something again. A skill on disk that is neither in the
+# manifest nor listed here is real drift and fails.
+#
+# One name per line. Empty until you add a skill of your own.
