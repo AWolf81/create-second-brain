@@ -11,6 +11,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import readline from "node:readline/promises"
+import { execFileSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 import { stdin, stdout } from "node:process"
 
@@ -128,6 +129,19 @@ if (fs.existsSync(setupSrc)) {
   fs.writeFileSync(readme, fs.readFileSync(readme, "utf8").replace("<!-- TARGET_SETUP -->", setup.trim() + (target === "fly" ? ciNote : "")))
 }
 
+// COG is the point of an agent-first vault, so it installs by default. It is a
+// network fetch from upstream, so a failure warns and moves on rather than
+// aborting a scaffold that is otherwise complete.
+let cogInstalled = false
+if (!has("no-cog")) {
+  try {
+    execFileSync("bash", ["scripts/add-cog.sh"], { cwd: target_dir, stdio: "inherit" })
+    cogInstalled = true
+  } catch {
+    console.warn("\n! COG install failed — run ./scripts/add-cog.sh once you are online.\n")
+  }
+}
+
 const steps =
   target === "gitlab"
     ? `  1  Push this to a GitLab project named "${app}"
@@ -148,8 +162,7 @@ ${steps}
 
 Then:
 
-  ./scripts/add-cog.sh      install the COG agent skills (optional)
-  ./scripts/doctor.sh       check what is still missing
+  ./scripts/doctor.sh       check what is still missing${cogInstalled ? "" : "\n  ./scripts/add-cog.sh      install the COG agent skills"}
 
 Write notes in 05-knowledge/. Each opens with a '# Heading' — the site derives
 its title, graph label and search entry from it. Nothing else needed.

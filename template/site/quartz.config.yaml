@@ -28,6 +28,12 @@ configuration:
     - private
     - templates
     - .obsidian
+    # The allowlist in build-content.sh is what actually keeps the COG framework
+    # tree off the site. These are the second layer, for anyone who widens it.
+    - .claude
+    - .agents
+    - skills
+    - integrations
   theme:
     # Fonts are owned entirely by the quartz-fonts plugin below. "local" keeps
     # Quartz's legacy font path from emitting a second, CDN-backed stylesheet.

@@ -53,7 +53,7 @@ one you pick.
 
 **Obsidian and the site agree.** `.obsidian/` ships configured, with graph filters matching the publish allowlist. Settings are committed; per-machine state is gitignored.
 
-**COG optional.** `./scripts/add-cog.sh` fetches [COG](https://github.com/huytieu/COG-second-brain) from upstream — 33 agent skills, workers and verifiers. Fetched rather than vendored, so attribution stays upstream and COG's own updater keeps working.
+**COG by default.** Scaffolding fetches [COG](https://github.com/huytieu/COG-second-brain) from upstream — 33 agent skills, workers and verifiers — because an agent-first vault without agent conventions is just a folder. Pass `--no-cog` to skip it, or run `./scripts/add-cog.sh` later. Fetched rather than vendored, so attribution stays upstream and COG's own updater keeps working. A failed fetch warns rather than aborting the scaffold.
 
 ## Honest alternatives
 
