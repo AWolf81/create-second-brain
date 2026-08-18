@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+public
+.claude
+.agents
+.claude-plugin
+.cursor-plugin
+skills
+integrations
+docs
+06-templates

@@ -1,0 +1,23 @@
+# Deploy from the repository root:
+#   flyctl deploy
+#
+# This file and the Dockerfile live at the repo root because that is where every
+# Fly tool looks. `fly launch` scans the root for a Dockerfile before it reads
+# any config, so burying them in site/ makes the web launcher fail with
+# "Could not detect runtime or Dockerfile". The rest of the site lives in site/.
+
+app = "__APP_NAME__"
+primary_region = "fra"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Static site with no state: idle machines stop and restart on the next request.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

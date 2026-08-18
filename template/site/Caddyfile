@@ -1,0 +1,45 @@
+{
+	admin off
+	# Fly terminates TLS at the edge and forwards plaintext to internal_port.
+	auto_https off
+	persist_config off
+}
+
+:8080 {
+	root * /srv
+
+	# Credentials come from Fly secrets, never from this file. BASIC_AUTH_HASH is
+	# a bcrypt hash; entrypoint.sh derives it from BASIC_AUTH_PASSWORD when only
+	# the plaintext is configured. Unset means an empty hash, which never matches
+	# — the site locks itself rather than opening up.
+	basic_auth {
+		{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
+	}
+
+	encode zstd gzip
+
+	# Quartz links to extensionless URLs (/05-knowledge/saas/readme) but emits
+	# readme.html, so the bare path has to fall back to the .html file.
+	try_files {path} {path}.html {path}/index.html
+
+	file_server
+
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		# The vault is private; keep it out of any index that manages to reach it.
+		X-Robots-Tag "noindex, nofollow, noarchive"
+		-Server
+	}
+
+	log {
+		# Request paths leak note titles into Fly's log stream. Errors only.
+		level ERROR
+	}
+}
