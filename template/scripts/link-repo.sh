@@ -30,6 +30,9 @@ cd "$ROOT_DIR"
 CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 MEMORY="$CLAUDE_DIR/CLAUDE.md"
 SKILL_DIR="$CLAUDE_DIR/skills/second-brain"
+HOOK_PATH="$CLAUDE_DIR/hooks/vault-read-logger.sh"
+LEDGER="$CLAUDE_DIR/vault-usage.tsv"
+SETTINGS="$CLAUDE_DIR/settings.json"
 BEGIN="<!-- second-brain:begin -->"
 END="<!-- second-brain:end -->"
 
@@ -164,6 +167,47 @@ strip_empty_frontmatter() {
   mv "$tmp" "$f"
 }
 
+# Install the hook that records vault reads, and register it in user settings.
+#
+# The skill claims agents consult the vault; this is what makes that observable
+# rather than asserted. It is per-vault, not per-repo, so unlinking a repo leaves
+# it in place.
+sync_hook() {
+  local src=hooks/vault-read-logger.sh tmp
+  [ -f "$src" ] || return 0
+
+  mkdir -p "$(dirname "$HOOK_PATH")"
+  awk -v vault="$ROOT_DIR" -v ledger="$LEDGER" '
+    { gsub(/__VAULT_PATH__/, vault); gsub(/__LEDGER_PATH__/, ledger); print }
+  ' "$src" > "$HOOK_PATH"
+  chmod +x "$HOOK_PATH"
+
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "! jq is not installed, so the read-logger hook was not registered." >&2
+    echo "  The link works; usage just goes unrecorded. Install jq and re-run." >&2
+    return 0
+  fi
+
+  [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
+  tmp="$(mktemp)"
+  # Drop any previous registration of this exact command before appending, so
+  # re-running never stacks duplicate hooks, and leave every other hook alone.
+  if jq --arg cmd "$HOOK_PATH" '
+        .hooks //= {}
+      | .hooks.PostToolUse //= []
+      | .hooks.PostToolUse |= map(select([(.hooks // [])[].command] | index($cmd) | not))
+      | .hooks.PostToolUse += [{
+          matcher: "Read|Grep|Glob",
+          hooks: [{ type: "command", command: $cmd }]
+        }]
+     ' "$SETTINGS" > "$tmp" 2>/dev/null && [ -s "$tmp" ]; then
+    mv "$tmp" "$SETTINGS"
+  else
+    rm -f "$tmp"
+    echo "! could not update $SETTINGS — is it valid JSON? Hook not registered." >&2
+  fi
+}
+
 if [ "${1:-}" = "--unlink" ]; then
   UNLINK="${2:-}"
   [ -n "$UNLINK" ] || die "usage: link-repo.sh --unlink <slug>"
@@ -173,7 +217,7 @@ if [ "${1:-}" = "--unlink" ]; then
   tmp="$(mktemp)"
   sed -E '/^repo: /d' "$page" > "$tmp" && mv "$tmp" "$page"
   strip_empty_frontmatter "$page"
-  sync_skill; sync_memory
+  sync_skill; sync_memory; sync_hook
   echo "✓ unlinked '$UNLINK'. Its project page is kept; only the repo link was removed."
   exit 0
 fi
@@ -264,6 +308,7 @@ fi
 
 sync_skill
 sync_memory
+sync_hook
 
 echo
 echo "✓ linked '$NAME' → $REPO_URL"
@@ -271,6 +316,7 @@ echo
 echo "  vault      $PAGE  (commit this)"
 echo "  user       $SKILL_DIR/SKILL.md"
 echo "  user       $MEMORY  (second-brain block)"
+[ -f "$HOOK_PATH" ] && echo "  user       $HOOK_PATH  (records vault reads)"
 [ -n "$LOCAL_PATH" ] && echo "  work repo  $LOCAL_PATH — untouched, by design"
 echo
 echo "Open the work repo in your agent; the vault is now in its user memory every session."

@@ -68,6 +68,29 @@ else
   fi
 fi
 
+# The hook is what turns "agents read the vault" from an assertion into a record.
+# An unregistered hook is invisible from the inside: the ledger just stays empty,
+# which reads identically to nobody having consulted the vault.
+if [ -f hooks/vault-read-logger.sh ]; then
+  hook="$CLAUDE_DIR/hooks/vault-read-logger.sh"
+  if ! command -v jq >/dev/null 2>&1; then
+    bad "jq is not installed — the read-logger hook cannot be registered or run"
+  elif [ ! -x "$hook" ]; then
+    note "read-logger hook not installed — run ./scripts/link-repo.sh to add it"
+  elif ! jq -e --arg c "$hook" '[.hooks.PostToolUse[]? | (.hooks // [])[].command] | index($c)' \
+         "$CLAUDE_DIR/settings.json" >/dev/null 2>&1; then
+    bad "the hook exists but is not registered in $CLAUDE_DIR/settings.json — re-run ./scripts/link-repo.sh"
+  else
+    ledger="${VAULT_USAGE_LEDGER:-$CLAUDE_DIR/vault-usage.tsv}"
+    if [ -s "$ledger" ]; then
+      ok "vault reads are being recorded ($(wc -l <"$ledger" | tr -d " ") so far — ./scripts/vault-usage.sh)"
+    else
+      note "read-logger installed, nothing recorded yet — expected until an agent opens a note"
+    fi
+    [ -s "$ledger.err" ] && bad "the read-logger logged errors — see $ledger.err"
+  fi
+fi
+
 # Conventions an agent cannot read are decoration. Check the wiring, not the wording:
 # a dropped import is indistinguishable from having no conventions at all.
 if [ ! -f WHERE-THINGS-LIVE.md ]; then

@@ -45,6 +45,17 @@ and date, and open a fresh `[Unreleased]` above it.
   `second-brain` skill plus a marked block in `~/.claude/CLAUDE.md`. The list of linked
   repos is derived from the project pages rather than kept in a registry file, so there is
   nothing to drift.
+- `hooks/vault-read-logger.sh` and `scripts/vault-usage.sh`. The bridge skill asserts that
+  agents read the vault before answering; nothing made that checkable, which is the same
+  shape as a metric whose numerator is structurally zero. `link-repo.sh` now registers a
+  `PostToolUse` hook on `Read|Grep|Glob` that records which vault notes were opened, and
+  `vault-usage.sh` reports reads per note plus — more usefully — the notes nothing has ever
+  opened. Path, tool, session and timestamp only; never the question or the answer, and
+  never a path outside the vault. Requires `jq`; without it the link still succeeds and
+  `doctor.sh` reports the hook as unregistered.
+- `05-knowledge/README.md` is a **routing table** rather than a list: match the question to a
+  row, then read the notes it names. An index plus a guess degrades with every note added
+  and is indistinguishable from having read the right one.
 - `doctor.sh` now reports linked repositories and fails when the vault lists links that
   `~/.claude` knows nothing about — the state a fresh clone on a second machine lands in,
   where the vault looks correctly configured and the agent side does not exist.
