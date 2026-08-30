@@ -34,6 +34,10 @@ The deploy target and the CI system are separate choices. GitLab Pages is publis
 GitLab, so it always uses GitLab CI; the Fly target runs from either, and ships only the
 one you pick.
 
+Other flags: `--app` (project/app name), `--title` (site title), `--repo` (vault repository
+URL — becomes the site footer's "Vault repo" link; omitted from the footer if you leave it
+blank), `--yes` (skip the prompts).
+
 | | GitLab Pages | Fly |
 |---|---|---|
 | Cost | free (400 CI min/mo) | ~free, scales to zero |
