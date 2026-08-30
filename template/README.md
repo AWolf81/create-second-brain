@@ -73,6 +73,38 @@ is never committed. Delete it any time; it rebuilds.
 
 Needs `jq`. Without it the link still works and `doctor.sh` says the hook is not registered.
 
+## Updating the machinery
+
+The template moves on after your vault is scaffolded. Pull its changes in without
+touching a note:
+
+```bash
+./scripts/update-template.sh --dry-run     # what would change
+./scripts/update-template.sh               # apply it
+./scripts/update-template.sh --diff <path> # what the template did to one file
+```
+
+A vault holds three kinds of file, and only the update tells them apart:
+
+| | Owner | On update |
+|---|---|---|
+| `scripts/`, `hooks/`, `site/`, CI config | the template | overwritten |
+| `00-inbox` … `06-templates` | you | **never touched** |
+| `05-knowledge/README.md`, `WHERE-THINGS-LIVE.md`, `CLAUDE.md` | seeded, then yours | left alone once edited, and reported |
+
+The third row is the one that matters. The template seeds those files and you then edit
+them — a routing table filled in with your real notes, systems of record filled in with
+your real tools. `.template-manifest` records the hash of every file as the template
+wrote it, so an update can tell *"still as we left it"* from *"you have edited this"*.
+Untouched files take the new version; edited ones are skipped with a `~` and a diff
+command, and nothing is ever merged for you.
+
+Notes are not in the manifest at all, so the updater has no path to one. That is the
+point: they are safe by construction, not because the script remembers to be careful.
+
+Commit before updating — the script insists on a clean tree, so the result is reviewable
+as its own diff.
+
 ## Writing notes
 
 Open every note with a single `# Heading`. The build derives the page title, graph label,
