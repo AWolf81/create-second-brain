@@ -84,7 +84,7 @@ if (!has("yes") && stdin.isTTY) {
   target = ((await rl.question(`Deploy target — gitlab (private Pages, free) or fly (own credentials) [${target}]: `)) || target).trim()
   app = slug((await rl.question(`Project / app name [${app}]: `)) || app)
   title = (await rl.question(`Site title [${title}]: `)) || title
-  repo = (await rl.question(`Repository URL (optional): `)) || repo
+  repo = (await rl.question(`Repository URL (optional — blank omits the footer link): `)) || repo
   if (target === "fly") ci = ((await rl.question(`CI — github or gitlab [${ci}]: `)) || ci).trim()
   rl.close()
 }
@@ -94,10 +94,17 @@ if (!fs.existsSync(path.join(TARGETS, target))) {
   process.exit(1)
 }
 
+// The footer's "Vault repo" link only exists if there is a repo to point at.
+// Scaffolding a placeholder URL ships a dead link on every generated site and
+// nothing ever prompts the owner to fix it, so omit the entry instead — the
+// footer renders fine with an empty link map.
+repo = repo.trim()
+const footerLinks = repo ? `\n        Vault repo: ${repo}` : " {}"
+
 const replace = {
   __APP_NAME__: app,
   __VAULT_TITLE__: title,
-  __REPO_URL__: repo || "https://example.com",
+  __FOOTER_LINKS__: footerLinks,
   __BASE_URL__: target === "fly" ? `${app}.fly.dev` : `<your-namespace>.gitlab.io/${app}`,
   __SITE_URL_HUMAN__: target === "fly" ? `https://${app}.fly.dev` : `https://<your-namespace>.gitlab.io/${app}`,
 }

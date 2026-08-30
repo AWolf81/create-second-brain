@@ -7,10 +7,26 @@ site with an Obsidian-style link graph, search and backlinks, behind authenticat
 same folder opens in Obsidian locally.
 
 ```bash
-pnpm create @awolf81/second-brain my-brain
+curl -fsSL https://raw.githubusercontent.com/AWolf81/create-second-brain/main/install.sh | sh -s -- my-brain --target fly
 ```
 
-No npm? `npx degit AWolf81/create-second-brain/template my-brain`
+It needs git and node >= 18, fetches this repository to a temporary directory and runs the
+scaffolder from there. Piped into a shell like that, stdin is the script rather than a
+terminal, so the prompts are skipped and defaults apply — pass the flags you care about, or
+download and run the file directly to answer them interactively.
+
+> **Not on npm yet.** Once `@awolf81/create-second-brain` is published, this becomes the
+> shorter equivalent — same scaffolder, same flags. It does **not** work today:
+>
+> ```bash
+> pnpm create @awolf81/second-brain my-brain
+> ```
+
+> Do not copy `template/` out of this repository by hand (with `degit`, or a tarball). That
+> directory is scaffolder input, not a vault: the substitutions never run, so the Quartz
+> config keeps `baseUrl: __BASE_URL__`, and the `targets/` directory is left in place
+> instead of one target being lifted to the root — no `Dockerfile`, no `fly.toml`, no
+> `.gitignore`, no CI workflow.
 
 ## Why this exists
 
@@ -24,15 +40,21 @@ This is the intersection: agent-readable markdown, published privately, on infra
 
 ## Two deploy targets
 
+Using `install.sh` as `csb` for brevity — the same flags work on `pnpm create` once published:
+
 ```bash
-pnpm create @awolf81/second-brain my-brain                              # GitLab Pages (default)
-pnpm create @awolf81/second-brain my-brain --target fly                 # Fly + Caddy, GitHub Actions
-pnpm create @awolf81/second-brain my-brain --target fly --ci gitlab     # Fly + Caddy, GitLab CI
+csb my-brain                              # GitLab Pages (default)
+csb my-brain --target fly                 # Fly + Caddy, GitHub Actions
+csb my-brain --target fly --ci gitlab     # Fly + Caddy, GitLab CI
 ```
 
 The deploy target and the CI system are separate choices. GitLab Pages is published by
 GitLab, so it always uses GitLab CI; the Fly target runs from either, and ships only the
 one you pick.
+
+Other flags: `--app` (project/app name), `--title` (site title), `--repo` (vault repository
+URL — becomes the site footer's "Vault repo" link; omitted from the footer if you leave it
+blank), `--yes` (skip the prompts).
 
 | | GitLab Pages | Fly |
 |---|---|---|

@@ -229,8 +229,9 @@ plugins:
   - source: "@quartz-community/footer"
     enabled: true
     options:
-      links:
-        Vault repo: __REPO_URL__
+      # Scaffolded from --repo. With no repo URL the whole entry is omitted
+      # rather than pointed at a placeholder: a missing link beats a dead one.
+      links:__FOOTER_LINKS__
     layout:
       position: footer
       priority: 50
