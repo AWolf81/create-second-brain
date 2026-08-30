@@ -12,6 +12,16 @@ and date, and open a fresh `[Unreleased]` above it.
 
 ### Added
 
+- `scripts/update-template.sh` and a committed `.template-manifest`, so a scaffolded vault
+  can pull template changes in place. The manifest records the sha256 of every file as the
+  template wrote it, which is what lets an update distinguish the three kinds of file a
+  vault holds: machinery it owns, notes it must never touch, and files it *seeded* that you
+  have since made yours — a routing table filled in with real notes, systems of record
+  filled in with real tools. Untouched files take the new version; edited ones are skipped
+  with a `~` and a diff command, never merged automatically. Notes are absent from the
+  manifest entirely, so the updater has no path to one — safe by construction rather than
+  by remembering to be careful. `--dry-run` reports without writing, and a dirty tree is
+  refused so the result is reviewable as its own diff.
 - Scaffolder for an agent-first knowledge vault: markdown in git, published as a private
   Quartz site with an Obsidian-style link graph, search and backlinks.
 - Two deploy targets. `--target gitlab` (default) publishes to GitLab Pages, private via
@@ -70,6 +80,15 @@ and date, and open a fresh `[Unreleased]` above it.
   Fonts.
 - Quartz cloned at a pinned commit rather than vendored, because its config schema changes
   between versions.
+
+### Fixed
+
+- A half-configured Fly app crash-looped instead of serving. Caddy refuses to parse a
+  `basic_auth` block with an empty username or password, so a vault deployed before its
+  secrets were set took the machine down rather than locking the door. `site/entrypoint.sh`
+  now substitutes a random credential nobody holds: the site stays up, answers 401 to
+  everything, and starts working when the secrets are set — no redeploy needed. Failing
+  closed is right; failing closed and *down* is not.
 
 ### Security
 

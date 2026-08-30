@@ -8,6 +8,7 @@
 // Dependency-free on purpose. A scaffolder that copies files should not drag a
 // package tree along with it.
 
+import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import readline from "node:readline/promises"
@@ -44,6 +45,16 @@ const positional = argv.filter(
 const slug = (s) =>
   s.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 30) || "second-brain"
 
+// Every file the template writes, as vault-relative path → sha256 of exactly
+// what was written. scripts/update-template.sh reads this to answer the only
+// question an in-place update needs: has this file changed since we wrote it?
+//
+// Unchanged means the template still owns it and an update may overwrite it.
+// Changed means the vault owns it now, and an update must leave it alone. A
+// note is never recorded here, so the updater has no path to one at all —
+// untouchable by construction rather than by remembering to be careful.
+const manifest = {}
+
 function copyTree(from, to, replace, skip = new Set()) {
   fs.mkdirSync(to, { recursive: true })
   for (const entry of fs.readdirSync(from, { withFileTypes: true })) {
@@ -60,6 +71,11 @@ function copyTree(from, to, replace, skip = new Set()) {
     for (const [token, value] of Object.entries(replace)) body = body.split(token).join(value)
     fs.writeFileSync(dst, body)
     if (dst.endsWith(".sh")) fs.chmodSync(dst, 0o755)
+
+    // Hash the substituted bytes, not the source: that is what landed on disk,
+    // and it is what the vault's copy is compared against later.
+    manifest[path.relative(target_dir, dst).split(path.sep).join("/")] =
+      crypto.createHash("sha256").update(body).digest("hex")
   }
 }
 
@@ -126,8 +142,19 @@ if (fs.existsSync(setupSrc)) {
   let setup = fs.readFileSync(setupSrc, "utf8")
   for (const [token, value] of Object.entries(replace)) setup = setup.split(token).join(value)
   const readme = path.join(target_dir, "README.md")
-  fs.writeFileSync(readme, fs.readFileSync(readme, "utf8").replace("<!-- TARGET_SETUP -->", setup.trim() + (target === "fly" ? ciNote : "")))
+  const spliced = fs.readFileSync(readme, "utf8").replace("<!-- TARGET_SETUP -->", setup.trim() + (target === "fly" ? ciNote : ""))
+  fs.writeFileSync(readme, spliced)
+  // Re-hash: copyTree recorded the pre-splice bytes, which are not what is on
+  // disk. A stale entry here would report an untouched README as edited.
+  manifest["README.md"] = crypto.createHash("sha256").update(spliced).digest("hex")
 }
+
+// Written last, once every copy and rewrite has settled. Committed, because a
+// second machine cloning this vault needs the same baseline to update against.
+fs.writeFileSync(
+  path.join(target_dir, ".template-manifest"),
+  JSON.stringify({ version: 1, target, ci, files: Object.fromEntries(Object.entries(manifest).sort()) }, null, 2) + "\n",
+)
 
 // COG is the point of an agent-first vault, so it installs by default. It is a
 // network fetch from upstream, so a failure warns and moves on rather than
