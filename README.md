@@ -53,6 +53,8 @@ one you pick.
 
 **Work repos link to it, without being touched.** `./scripts/link-repo.sh ~/code/my-product` puts the vault into your agent's memory for that repo — read before answering about strategy, pricing, compliance or a past decision, harvest what transfers when work closes. Nothing is written into the work repo: committed wiring rides every branch and shows up in every PR diff, so the machine-specific half lives in `~/.claude` and the durable half is a `repo:` key on the vault's own project page.
 
+**Evidence it gets read.** A user-level hook records which notes agents actually open, so "the agent consulted the vault" is checkable instead of asserted — and `vault-usage.sh` names the notes nothing has ever opened. Paths and timestamps only; never the question or the answer.
+
 **Obsidian and the site agree.** `.obsidian/` ships configured, with graph filters matching the publish allowlist. Settings are committed; per-machine state is gitignored.
 
 **COG by default.** Scaffolding fetches [COG](https://github.com/huytieu/COG-second-brain) from upstream — 33 agent skills, workers and verifiers — because an agent-first vault without agent conventions is just a folder. Pass `--no-cog` to skip it, or run `./scripts/add-cog.sh` later. Fetched rather than vendored, so attribution stays upstream and COG's own updater keeps working. A failed fetch warns rather than aborting the scaffold.

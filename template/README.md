@@ -49,6 +49,30 @@ linked repos is read back out of the project pages, so there is no registry file
 On a second machine, clone the vault and run `./scripts/link-repo.sh` once per repo again —
 the committed half is already there, so it only rebuilds the local half.
 
+## Proof it was actually read
+
+The bridge skill tells agents to consult the vault before answering. Nothing about that
+claim was checkable, which is the same shape as a metric whose numerator is structurally
+zero — it looks like coverage and cannot fail visibly.
+
+`link-repo.sh` installs a `PostToolUse` hook at user level that records every vault file an
+agent opens. Report on it:
+
+```bash
+./scripts/vault-usage.sh                  # reads per note, and which notes nothing has opened
+./scripts/vault-usage.sh --since 2026-08-01
+```
+
+The **never read** section is the useful half. A note nothing has opened is either a question
+that stopped being asked or one the routing table fails to route — opposite fixes, and you
+cannot tell which without knowing it happened.
+
+Only the note path, the tool, a session id and a timestamp are recorded — never the question,
+the answer, or anything outside the vault. The ledger lives in your user config directory and
+is never committed. Delete it any time; it rebuilds.
+
+Needs `jq`. Without it the link still works and `doctor.sh` says the hook is not registered.
+
 ## Writing notes
 
 Open every note with a single `# Heading`. The build derives the page title, graph label,

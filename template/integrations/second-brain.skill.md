@@ -17,14 +17,25 @@ __LINKED_REPOS__
 ## Read the vault before answering — ALWAYS APPLY
 
 Before answering anything about strategy, pricing, compliance, legal or tax setup, launch,
-positioning, or a past architectural decision, read the vault. Start at
-`__VAULT_PATH__/05-knowledge/README.md`.
+positioning, or a past architectural decision, read the vault.
+
+**Narrow before reading.** `__VAULT_PATH__/05-knowledge/README.md` is a routing table, not a
+list: match the question to a row, then open the notes that row names. Reading the index and
+then guessing which note looks relevant is the failure mode it exists to prevent — it gets
+worse with every note added, and it looks identical to having read the right one.
+
+If no row matches, grep the vault before concluding it is silent.
 
 The vault records decisions **and what they were decided against**. A plausible general
 answer that contradicts a past decision is the exact failure this exists to prevent. If the
-vault is silent on the question, say so rather than filling the gap from general knowledge.
+vault really is silent, say so rather than filling the gap from general knowledge — and on a
+partial match, name which half of your answer is grounded and which is not.
 
 **Always read the vault at `main`.** Feature branches hold unpromoted drafts.
+
+Vault reads are recorded by a hook at user level, so "I consulted the vault" is checkable
+against `./scripts/vault-usage.sh` rather than taken on trust. Nothing about the question or
+the answer is logged — only which note was opened, and when.
 
 ## Never write vault wiring into a work repo — ALWAYS APPLY
 
