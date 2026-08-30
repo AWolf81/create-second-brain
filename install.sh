@@ -8,7 +8,11 @@
 # and defaults apply — pass the flags you care about, or download and run the
 # file directly to answer interactively.
 #
-# Equivalent to `pnpm create @awolf81/second-brain`, and takes the same flags —
+# This is currently the only way to scaffold a vault: @awolf81/create-second-brain
+# is not published to npm yet, so `pnpm create @awolf81/second-brain` does not
+# resolve. It will be the shorter equivalent once it is.
+#
+# Takes the same flags the npm path will —
 # it fetches this repository to a temporary directory and runs the real
 # scaffolder from it. That matters: index.js resolves template/ relative to
 # itself, so running it in place is what makes --target, --ci, --app, --title

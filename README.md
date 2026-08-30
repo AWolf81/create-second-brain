@@ -7,19 +7,20 @@ site with an Obsidian-style link graph, search and backlinks, behind authenticat
 same folder opens in Obsidian locally.
 
 ```bash
-pnpm create @awolf81/second-brain my-brain
-```
-
-No npm? The install script takes the same arguments:
-
-```bash
 curl -fsSL https://raw.githubusercontent.com/AWolf81/create-second-brain/main/install.sh | sh -s -- my-brain --target fly
 ```
 
 It needs git and node >= 18, fetches this repository to a temporary directory and runs the
-same scaffolder from there. Piped into a shell like that, stdin is the script rather than a
+scaffolder from there. Piped into a shell like that, stdin is the script rather than a
 terminal, so the prompts are skipped and defaults apply — pass the flags you care about, or
 download and run the file directly to answer them interactively.
+
+> **Not on npm yet.** Once `@awolf81/create-second-brain` is published, this becomes the
+> shorter equivalent — same scaffolder, same flags. It does **not** work today:
+>
+> ```bash
+> pnpm create @awolf81/second-brain my-brain
+> ```
 
 > Do not copy `template/` out of this repository by hand (with `degit`, or a tarball). That
 > directory is scaffolder input, not a vault: the substitutions never run, so the Quartz
@@ -39,10 +40,12 @@ This is the intersection: agent-readable markdown, published privately, on infra
 
 ## Two deploy targets
 
+Using `install.sh` as `csb` for brevity — the same flags work on `pnpm create` once published:
+
 ```bash
-pnpm create @awolf81/second-brain my-brain                              # GitLab Pages (default)
-pnpm create @awolf81/second-brain my-brain --target fly                 # Fly + Caddy, GitHub Actions
-pnpm create @awolf81/second-brain my-brain --target fly --ci gitlab     # Fly + Caddy, GitLab CI
+csb my-brain                              # GitLab Pages (default)
+csb my-brain --target fly                 # Fly + Caddy, GitHub Actions
+csb my-brain --target fly --ci gitlab     # Fly + Caddy, GitLab CI
 ```
 
 The deploy target and the CI system are separate choices. GitLab Pages is published by
