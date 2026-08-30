@@ -5,13 +5,24 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Nothing has been published to npm yet. On release, rename `[Unreleased]` to the version
-and date, and open a fresh `[Unreleased]` above it.
+Not yet published to npm — scaffold with `install.sh` (see the README). On release, rename
+`[Unreleased]` to the version and date, and open a fresh `[Unreleased]` above it.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-30
+
+First tagged release. Not on npm yet, so `install.sh` is the supported way to scaffold a
+vault; `pnpm create @awolf81/second-brain` becomes the shorter equivalent once published.
+
 ### Added
 
+- `install.sh`, an npm-free way to scaffold, taking the same arguments as the npm path. It
+  fetches this repository to a temporary directory and runs `index.js` from there, which is
+  what makes every flag behave identically — `index.js` resolves `template/` relative to
+  itself. Needs only git and node >= 18. Piped into a shell, the scaffolder's prompts cannot
+  read stdin and defaults apply, so the script says so rather than letting a vault be
+  silently named "Second Brain".
 - `scripts/update-template.sh` and a committed `.template-manifest`, so a scaffolded vault
   can pull template changes in place. The manifest records the sha256 of every file as the
   template wrote it, which is what lets an update distinguish the three kinds of file a
@@ -69,7 +80,6 @@ and date, and open a fresh `[Unreleased]` above it.
 - `doctor.sh` now reports linked repositories and fails when the vault lists links that
   `~/.claude` knows nothing about — the state a fresh clone on a second machine lands in,
   where the vault looks correctly configured and the agent side does not exist.
-
 - `scripts/check-agent-surface.sh` and `local-skills.txt`, which reconcile COG's surface
   validator against skills you add yourself. COG's validator is a publishing gate for
   COG's own plugin, so your skills make it report an error permanently; registering them
@@ -83,12 +93,27 @@ and date, and open a fresh `[Unreleased]` above it.
 
 ### Fixed
 
+- Every vault scaffolded without `--repo` shipped a footer linking to `https://example.com`.
+  The placeholder was a substitution default, so the generated config looked deliberate and
+  nothing ever prompted the owner to fix it — the dead link just sat on the deployed site.
+  With no repo URL the whole entry is now omitted rather than filled in: a missing link
+  beats a dead one. `--repo` is also documented now, which is most of why it got skipped.
 - A half-configured Fly app crash-looped instead of serving. Caddy refuses to parse a
   `basic_auth` block with an empty username or password, so a vault deployed before its
   secrets were set took the machine down rather than locking the door. `site/entrypoint.sh`
   now substitutes a random credential nobody holds: the site stays up, answers 401 to
   everything, and starts working when the secrets are set — no redeploy needed. Failing
   closed is right; failing closed and *down* is not.
+
+### Removed
+
+- The `npx degit .../template` line from the README. It never produced a working vault:
+  `template/` is scaffolder input, so a raw copy leaves every `__PLACEHOLDER__`
+  unsubstituted (`baseUrl: __BASE_URL__`), keeps `targets/` instead of lifting one target
+  to the root, and never restores the underscore-prefixed files — no `Dockerfile`, no
+  `fly.toml`, no `.gitignore`, no CI workflow. degit also silently ignores `--target` and
+  friends, since those are `index.js` flags and degit never runs `index.js`. Use
+  `install.sh` instead.
 
 ### Security
 
@@ -113,4 +138,5 @@ and date, and open a fresh `[Unreleased]` above it.
   `X-Robots-Tag: noindex, nofollow, noarchive`.
 - Caddy logs at `ERROR` only, so note titles do not reach the platform log stream.
 
-[Unreleased]: https://github.com/AWolf81/create-second-brain/commits/main
+[Unreleased]: https://github.com/AWolf81/create-second-brain/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/AWolf81/create-second-brain/releases/tag/v0.1.0
