@@ -10,7 +10,22 @@ same folder opens in Obsidian locally.
 pnpm create @awolf81/second-brain my-brain
 ```
 
-No npm? `npx degit AWolf81/create-second-brain/template my-brain`
+No npm? The install script takes the same arguments:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AWolf81/create-second-brain/main/install.sh | sh -s -- my-brain --target fly
+```
+
+It needs git and node >= 18, fetches this repository to a temporary directory and runs the
+same scaffolder from there. Piped into a shell like that, stdin is the script rather than a
+terminal, so the prompts are skipped and defaults apply — pass the flags you care about, or
+download and run the file directly to answer them interactively.
+
+> Do not copy `template/` out of this repository by hand (with `degit`, or a tarball). That
+> directory is scaffolder input, not a vault: the substitutions never run, so the Quartz
+> config keeps `baseUrl: __BASE_URL__`, and the `targets/` directory is left in place
+> instead of one target being lifted to the root — no `Dockerfile`, no `fly.toml`, no
+> `.gitignore`, no CI workflow.
 
 ## Why this exists
 
