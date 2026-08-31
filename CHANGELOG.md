@@ -10,6 +10,20 @@ Not yet published to npm — scaffold with `install.sh` (see the README). On rel
 
 ## [Unreleased]
 
+### Fixed
+
+- Every note on the published site showed the same date — the deploy's. Quartz fell back to
+  filesystem mtime, and mtime says nothing about a note: a clone stamps every file with the
+  clone time, so twelve notes written over six weeks all claimed the same afternoon. The
+  dates only survive in git, which the build could not see: `content/` is a copy with no
+  history, and on the Fly target `.dockerignore` excludes `.git` on purpose. So
+  `scripts/write-note-dates.sh` resolves them in CI, where history exists, and
+  `build-content.sh` stamps `created:`/`modified:` onto the staged copy — same "operate on
+  the copy" rule as titles, so notes stay frontmatter-free and a date you write yourself
+  still wins. CI now checks out full history (`fetch-depth: 0`, `GIT_DEPTH: 0`); on a shallow
+  clone the dates are omitted rather than guessed, because dating every note to one commit is
+  the same wrong answer in a new costume.
+
 ## [0.1.0] - 2026-08-30
 
 First tagged release. Not on npm yet, so `install.sh` is the supported way to scaffold a

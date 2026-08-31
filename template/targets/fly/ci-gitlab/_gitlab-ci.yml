@@ -9,6 +9,12 @@
 
 image: node:22
 
+variables:
+  # Full history: scripts/write-note-dates.sh dates each note from the commit
+  # that added it. GitLab clones 20 commits deep by default, which would date
+  # every older note to the deploy.
+  GIT_DEPTH: 0
+
 deploy:
   stage: deploy
   rules:
@@ -17,6 +23,10 @@ deploy:
     # A note with no title source would fall back to its filename on the site.
     # Fail here rather than quietly shipping a graph full of "README".
     - ./scripts/validate-note-titles.sh
+
+    # The image is built with .git excluded, so resolve the real authored dates
+    # here and pass them in as a file.
+    - ./scripts/write-note-dates.sh
 
     # Fly's documented installer; it pins itself to the current release.
     - curl -L https://fly.io/install.sh | sh

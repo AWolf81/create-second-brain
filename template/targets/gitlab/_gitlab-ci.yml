@@ -10,6 +10,10 @@ image: node:22
 
 variables:
   QUARTZ_REF: "075afd3f712da0088a07f5284a7b3aba37dd61b6"
+  # Full history: build-content.sh dates each note from the commit that added it
+  # and the one that last touched it. GitLab clones 20 commits deep by default,
+  # which silently dates every older note to the deploy.
+  GIT_DEPTH: 0
 
 pages:
   stage: deploy

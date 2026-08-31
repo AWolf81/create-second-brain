@@ -29,12 +29,23 @@ jobs:
     name: Build and deploy to Fly
     runs-on: ubuntu-latest
     steps:
+      # Full history: build-content.sh dates each note from the commit that
+      # added it and the one that last touched it. The default shallow clone has
+      # a single commit, which would date every note to the deploy.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # A note with no title source falls back to its filename on the site.
       # Fail here rather than quietly shipping a graph full of "README".
       - name: Validate note titles
         run: ./scripts/validate-note-titles.sh
+
+      # The image is built with .git excluded, so resolve each note's real
+      # authored dates here and pass them in as a file. Without this every note
+      # is dated to the build.
+      - name: Record note dates
+        run: ./scripts/write-note-dates.sh
 
       - uses: superfly/flyctl-actions/setup-flyctl@master
 

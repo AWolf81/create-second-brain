@@ -151,5 +151,11 @@ Title* community plugin.
 - **The graph fetches d3 and pixi.js from `cdn.jsdelivr.net`** at runtime. Quartz hardcodes
   this. Your notes never go there, but the request is visible to that CDN.
 - **Fonts are self-hosted**, downloaded at build time — no reader calls Google Fonts.
+- **Note dates come from git**, not the filesystem. A clone stamps every file with the clone
+  time, so mtime would date the whole vault to the deploy. CI resolves the real dates with
+  `./scripts/write-note-dates.sh` and the build stamps them onto the staged copy — your notes
+  stay frontmatter-free, and a `created:` you write yourself always wins. This needs full
+  history (`fetch-depth: 0`, already set); on a shallow clone the dates are omitted rather
+  than guessed, and the build says so.
 - Quartz is cloned at a pinned commit, not vendored; its config schema changes between
   versions. Rebuild locally before changing the ref.

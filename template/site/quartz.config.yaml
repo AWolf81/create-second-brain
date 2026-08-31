@@ -11,7 +11,11 @@
 #                                theme.cdnCaching does NOT control it.
 #   sitemap / RSS    disabled  - the site is behind basic auth, nothing crawls it
 #   og-image         disabled  - social previews can never fire on a gated site
-#   date priority    no git    - content/ is a copy with no git history
+#   date priority    no git    - content/ is a copy with no history of its own.
+#                                build-content.sh reads the real dates from the
+#                                vault's git and stamps them as frontmatter, so
+#                                frontmatter comes first and mtime is only the
+#                                fallback for a note git cannot date.
 #
 # baseUrl must match the deployed hostname: self-hosted fonts are rewritten to
 # absolute https://<baseUrl>/static/fonts/... URLs and will 404 if it drifts.

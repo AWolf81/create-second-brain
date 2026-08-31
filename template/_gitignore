@@ -3,6 +3,11 @@ public/
 .quartz/
 .DS_Store
 
+# Derived from git by scripts/write-note-dates.sh at build time. Committing it
+# would mean a conflict on every commit that touches a note, for data git
+# already holds.
+.note-dates.tsv
+
 # Obsidian: keep shared settings, ignore per-machine state.
 .obsidian/workspace*
 .obsidian/cache

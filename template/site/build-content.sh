@@ -2,13 +2,21 @@
 #
 # Stage vault content into Quartz's content/ directory.
 #
-# Two jobs:
+# Three jobs:
 #   1. Allowlist which vault folders reach the site.
 #   2. Give every staged note a `title:`, derived from its `# H1` when it has
 #      none of its own.
+#   3. Give every staged note `created:` and `modified:`, derived from git.
 #
-# Both operate on the *copy*. Vault files are never modified, so no note has to
-# carry site-specific frontmatter and nobody has to remember to add it.
+# All three operate on the *copy*. Vault files are never modified, so no note
+# has to carry site-specific frontmatter and nobody has to remember to add it.
+#
+# Why dates need doing at all: Quartz falls back to filesystem mtime, and mtime
+# is meaningless for a vault. A fresh clone stamps every file with the clone
+# time, so a CI build dates the whole vault to the deploy — twelve notes written
+# over six weeks all claiming the same afternoon. git is the only place the real
+# dates survive, and content/ is a copy with no history of its own, so the dates
+# are read here from the source repo and written into the copy as frontmatter.
 #
 # Usage: build-content.sh <vault-root> <content-dir>
 
@@ -87,6 +95,74 @@ apply_title() {
   mv "$tmp" "$file"
 }
 
+# Is there real history to read? A shallow clone — actions/checkout's default —
+# has exactly one commit, so every note's "first commit" is that commit and the
+# dates would be uniformly wrong in a new way. Better to write nothing and let
+# Quartz fall back than to stamp a confident lie on every page.
+HAVE_GIT_DATES=0
+DATE_SIDECAR="$SRC/.note-dates.tsv"
+
+if git -C "$SRC" rev-parse --git-dir >/dev/null 2>&1 &&
+   [ "$(git -C "$SRC" rev-parse --is-shallow-repository 2>/dev/null)" != "true" ]; then
+  HAVE_GIT_DATES=1
+elif [ -s "$DATE_SIDECAR" ]; then
+  # No usable history here — the Fly image is built with .git excluded — so use
+  # the sidecar CI resolved before the build. See scripts/write-note-dates.sh.
+  echo "build-content: using dates from $(basename "$DATE_SIDECAR")." >&2
+else
+  echo "build-content: no git history and no .note-dates.tsv — dates omitted," >&2
+  echo "  so Quartz will fall back to filesystem mtime (the build time). Run" >&2
+  echo "  ./scripts/write-note-dates.sh in CI before building." >&2
+fi
+
+# Stamp a staged note with the dates its source file actually has in git.
+#
+# created  = the commit that first introduced the path
+# modified = the commit that last touched it
+#
+# Both are read from SRC, where history lives, and written into DEST, which has
+# none. Frontmatter already present always wins, same rule as the title.
+apply_dates() {
+  local file="$1" rel created modified tmp row
+
+  rel="${file#"$DEST"/}"
+  # index.md is generated, not a vault note, so it has no source to date.
+  [ -f "$SRC/$rel" ] || return 0
+
+  if [ "$HAVE_GIT_DATES" = 1 ]; then
+    # --diff-filter=A finds the commit that added the path. A file that was
+    # renamed reports its rename as the creation; --follow would trace further,
+    # but it cannot be combined with a reliable date-only format across git
+    # versions, and a rename is a defensible "created here" for a note.
+    created="$(git -C "$SRC" log --diff-filter=A --format=%aI -1 -- "$rel" 2>/dev/null)"
+    modified="$(git -C "$SRC" log --format=%aI -1 -- "$rel" 2>/dev/null)"
+  elif [ -s "$DATE_SIDECAR" ]; then
+    row="$(awk -F'\t' -v p="$rel" '$1 == p { print; exit }' "$DATE_SIDECAR")"
+    created="$(printf '%s' "$row" | cut -f2)"
+    modified="$(printf '%s' "$row" | cut -f3)"
+  else
+    return 0
+  fi
+
+  # Untracked or never-committed: no dates rather than invented ones.
+  [ -n "$created" ] && [ -n "$modified" ] || return 0
+
+  tmp="$file.tmp"
+  if has_frontmatter "$file"; then
+    awk -v c="created: $created" -v m="modified: $modified" '
+      NR==1 { print; next }
+      # Only inside the opening block, and never clobbering an existing key.
+      !done && /^---$/ { if (!seen_c) print c; if (!seen_m) print m; done=1; print; next }
+      !done && /^created:/  { seen_c=1 }
+      !done && /^modified:/ { seen_m=1 }
+      { print }
+    ' "$file" > "$tmp"
+  else
+    { printf -- '---\ncreated: %s\nmodified: %s\n---\n\n' "$created" "$modified"; cat "$file"; } > "$tmp"
+  fi
+  mv "$tmp" "$file"
+}
+
 rm -rf "$DEST"
 mkdir -p "$DEST"
 
@@ -99,7 +175,10 @@ done
 cp "$SRC/site/index.md" "$DEST/index.md"
 
 while IFS= read -r file; do
+  # Title first: it may open the frontmatter block that apply_dates then writes
+  # into, which keeps every staged note to a single block.
   apply_title "$file"
+  apply_dates "$file"
 done < <(find "$DEST" -name '*.md' -type f)
 
 count=$(find "$DEST" -name '*.md' -type f | wc -l)
