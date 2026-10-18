@@ -29,7 +29,9 @@ else
   bad "some notes have no '# H1' and no frontmatter title — run ./scripts/validate-note-titles.sh"
 fi
 
-if [ -d .claude ] || [ -d .agents ]; then
+# Not `-d .claude`: the template ships its own skills there, so that directory
+# exists with or without COG. cog-update.sh is installed by add-cog.sh only.
+if [ -f cog-update.sh ]; then
   ok "COG agent skills installed"
   if ./scripts/check-agent-surface.sh >/dev/null 2>&1; then
     ok "agent surface check passes"

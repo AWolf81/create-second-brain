@@ -10,7 +10,22 @@ Not yet published to npm — scaffold with `install.sh` (see the README). On rel
 
 ## [Unreleased]
 
+### Added
+
+- A `code-backup` skill in `.claude/skills/`, plus a *Backups* section in the vault README.
+  Git and Syncthing are not backups: uncommitted and unpushed work is exactly what they
+  miss. Backup is still not template machinery, because a script that fits one person's
+  disks and provider fits nobody else's. The skill sets restic up by conversation instead:
+  sources, destinations (local folder, Fly Tigris, B2, R2, Hetzner Storage Box, Google Drive
+  via rclone), schedule, retention and a failure alert. It writes only to the machine, never
+  to the vault or a work repo. The template ships `.claude/` as `_claude` for the same npm
+  reason as the other dotfiles.
+
 ### Fixed
+
+- `doctor.sh` reported COG as installed whenever `.claude/` existed. The template now ships
+  a skill there, so every vault would have passed. COG is now detected by `cog-update.sh`,
+  which only `add-cog.sh` installs.
 
 - Every note on the published site showed the same date — the deploy's. Quartz fell back to
   filesystem mtime, and mtime says nothing about a note: a clone stamps every file with the

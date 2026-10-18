@@ -146,6 +146,32 @@ Two files both called `README.md` look identical in Obsidian's graph even though
 shows their derived titles. Either give files distinct names, or install the *Front Matter
 Title* community plugin.
 
+## Backups
+
+**Git and sync are not backups.** Git holds only what you committed *and pushed*.
+Syncthing, Obsidian Sync and Dropbox replicate a deletion as faithfully as an edit. The
+vault is fine once it is pushed. The gap is your code projects' working trees:
+uncommitted changes, unpushed branches, stashes.
+
+The vault ships no backup machinery, because no single script fits every set of disks,
+providers and operating systems. It ships a skill instead. Open the vault in Claude Code
+and ask it to *set up backups for my code*. The `code-backup` skill asks what to back
+up, where, how often and how to alert you, then writes a [restic](https://restic.net)
+config and a scheduled job **on this machine**. Nothing goes into the vault or a work
+repo.
+
+restic encrypts before anything leaves the machine, so any of these backends works:
+
+| Backend | How |
+|---|---|
+| Fly Tigris, Backblaze B2, Cloudflare R2 | S3-compatible: an endpoint plus a key pair |
+| Hetzner Storage Box | SFTP, native, no extra tools |
+| Google Drive | through rclone; slower, and its OAuth token can expire |
+| Local folder, USB disk, NAS | a path; the fast copy that restores come from |
+
+Keep **one local copy and one offsite**. Keep the restic password somewhere other than
+the machine being backed up: without it, every snapshot is unreadable.
+
 ## Known characteristics
 
 - **The graph fetches d3 and pixi.js from `cdn.jsdelivr.net`** at runtime. Quartz hardcodes

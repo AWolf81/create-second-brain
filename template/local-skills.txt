@@ -12,4 +12,5 @@
 # and a red result means something again. A skill on disk that is neither in the
 # manifest nor listed here is real drift and fails.
 #
-# One name per line. Empty until you add a skill of your own.
+# One name per line. code-backup ships with the template; add your own below it.
+code-backup

@@ -77,6 +77,8 @@ blank), `--yes` (skip the prompts).
 
 **Evidence it gets read.** A user-level hook records which notes agents actually open, so "the agent consulted the vault" is checkable instead of asserted — and `vault-usage.sh` names the notes nothing has ever opened. Paths and timestamps only; never the question or the answer.
 
+**Backups, set up by conversation.** Git and sync are not backups; uncommitted and unpushed work is the gap. The vault ships a `code-backup` skill rather than a script: ask the agent to set up backups, and it writes a restic job for *this* machine. Local folder, Fly Tigris, B2, R2, Hetzner Storage Box or Google Drive, one copy or several. Nothing is committed anywhere.
+
 **Obsidian and the site agree.** `.obsidian/` ships configured, with graph filters matching the publish allowlist. Settings are committed; per-machine state is gitignored.
 
 **COG by default.** Scaffolding fetches [COG](https://github.com/huytieu/COG-second-brain) from upstream — 33 agent skills, workers and verifiers — because an agent-first vault without agent conventions is just a folder. Pass `--no-cog` to skip it, or run `./scripts/add-cog.sh` later. Fetched rather than vendored, so attribution stays upstream and COG's own updater keeps working. A failed fetch warns rather than aborting the scaffold.

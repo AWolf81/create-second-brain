@@ -29,7 +29,7 @@ installed=0
 for p in "${COG_PATHS[@]}"; do
   [ -e "$TMP/cog/$p" ] || continue
 
-  # A directory that already exists here — scripts/ does — is merged file by
+  # A directory that already exists here — scripts/ and .claude/ do — is merged file by
   # file rather than skipped wholesale, or COG's own validators would never
   # arrive. Existing files always win: yours are not overwritten.
   if [ -d "$TMP/cog/$p" ] && [ -d "$p" ]; then

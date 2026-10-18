@@ -27,6 +27,7 @@ const RENAME = {
   _dockerignore: ".dockerignore",
   _github: ".github",
   _obsidian: ".obsidian",
+  _claude: ".claude",
   "_gitlab-ci.yml": ".gitlab-ci.yml",
 }
 
