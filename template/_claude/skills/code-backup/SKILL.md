@@ -1,6 +1,6 @@
 ---
 name: code-backup
-description: Set up, change or check automatic restic backups of the user's code projects — working trees including uncommitted and unpushed work — to a local folder, a disk or NAS, and/or offsite storage (Fly Tigris, Backblaze B2, Cloudflare R2, Hetzner Storage Box, Google Drive via rclone), on a schedule with a failure alert. Use when the user asks to back up their code, set up restic, add a backup destination, change the backup schedule or retention, find out why a backup failed, or restore from one. Setup happens as a conversation; nothing is written into the vault or a work repository.
+description: Set up, change, verify or restore automatic restic backups of the user's code projects — working trees including uncommitted and unpushed work — designed to the 3-2-1-1 rule (3 copies, 2 media, 1 offsite, 1 offline or immutable) across a local folder, a disk or NAS, and offsite storage (Fly Tigris, Backblaze B2, Cloudflare R2, Hetzner Storage Box, Google Drive via rclone), on a schedule with a failure alert. Ships check.sh, a checklist that verifies the setup and runs restore and integrity tests. Use when the user asks to back up their code, set up restic, asks whether their backups are OK or complete, mentions 3-2-1, adds a backup destination, changes the schedule or retention, finds a backup failed, or needs to restore. Setup happens as a conversation; nothing is written into the vault or a work repository.
 ---
 
 # Code backup
@@ -14,6 +14,37 @@ before upload, deduplicated, incremental, and with any number of destinations.
 The vault ships this as a skill, not a script, on purpose. Backup setups differ in every
 direction (OS, disks, provider, budget), and a fixed script would suit nobody. So set it up
 by **talking it through with the user**, then write the result to *this machine*.
+
+## Strategy: 3-2-1-1
+
+Design every setup to this rule, and say plainly which parts a setup does not meet yet.
+The rule is the long-standing 3-2-1 plus one more copy kept offline. Daniel Wells'
+[write-up](https://www.danielwells.me/posts/restic-deduplication-vs-git/) is a good
+worked example with restic.
+
+| Rule | Means | Protects against |
+|---|---|---|
+| **3** copies | the original plus two backups | one backup turning out unreadable just when you need it |
+| **2** media | not all on one disk: internal disk, external disk, cloud | a dead disk taking the original and its backup together |
+| **1** offsite | outside the building | fire, flood, burglary |
+| **1** offline | not reachable from this machine | ransomware, a stolen laptop, a leaked key, `restic forget` run in the wrong terminal |
+
+The last row is the one people skip, and it is the one that matters against an
+attacker. Any repository this machine can write to, it can also delete. That includes
+the cloud bucket: the backup key needs delete rights for `prune`. So the extra copy is
+one of these:
+
+- **Offline**: a USB disk that is plugged in for a backup and then put away (`OFFLINE=1`).
+  It is cheap and certain, and depends on a habit; `check.sh` fails when the copy gets
+  too old.
+- **Immutable**: storage that refuses deletes from this machine's credentials. Examples
+  are restic's `rest-server --append-only` (on a NAS, say) and S3 Object Lock (AWS,
+  Backblaze B2). `forget`/`prune` then runs with a different credential, or not at all.
+  Check what the provider actually offers rather than assuming; the `IMMUTABLE=1` flag
+  stays ASK until the user confirms it.
+
+Also settle the **recovery goal**: how long the user could live without the code
+(an hour? two days?). It decides whether the fast local copy is essential or optional.
 
 ## Rules
 
@@ -29,6 +60,10 @@ by **talking it through with the user**, then write the result to *this machine*
   and a password that exists only on the machine being backed up dies with that machine.
 - **Ask before** installing packages, running `restic init`, enabling the timer, or running
   any `forget`/`prune` outside the scheduled job.
+- **Diagnose read-only.** `snapshots`, `ls`, `stats`, `check`, `diff` and `restore` into an
+  empty directory cannot lose anything. Run `forget`, `prune`, `key remove`,
+  `unlock --remove-all` and deleting a repository only when the user asked for that exact
+  command. An agent that can delete backups is one more way to lose them.
 
 ## The conversation
 
@@ -39,11 +74,13 @@ instead of asking again.
 1. **What.** Default `~/code`. Ask about other roots, and include the vault itself if it
    lives elsewhere. Show the default excludes (below) and ask what they build into, since
    `build/` or `target/` is source in some projects.
-2. **Where.** Recommend **two copies: one local, one offsite**. A disk dies, a laptop gets
-   stolen, a provider locks an account; two copies survive any one of those. Use the
-   [destinations](#destinations) table. For a local folder, ask **whether it is on a
-   different physical disk**. If it is on the same disk, say so plainly: it protects against
-   `rm -rf` and a bad rebase, not against disk failure.
+2. **Where.** Build toward [3-2-1-1](#strategy-3-2-1-1): a fast local copy, an offsite
+   one, and an offline or immutable one. The offline copy can be the local disk itself if
+   it gets unplugged between backups. Use the [destinations](#destinations) table. If the
+   user wants less, set up what they choose and say which rows it leaves open. For a
+   local folder, ask **whether it is on a different physical disk**. If it is on the same
+   disk, say so plainly: it protects against `rm -rf` and a bad rebase, not against disk
+   failure. A NAS in the same house is on-site, however separate it feels.
 3. **When.** Default daily at 02:00. Hourly suits people who leave work uncommitted for days.
    A machine that is off or asleep at that time catches up at next boot or resume
    (`Persistent=true`), so ask only whether it is usually on.
@@ -72,16 +109,20 @@ destination is its own restic repository with its own env file.
 | Hetzner Storage Box | `sftp:storagebox:/restic-code` | Cheap, hosted in Germany, native SFTP with no rclone. **SSH listens on port 23**: add a `Host storagebox` entry to `~/.ssh/config` with `Port 23` and a key, because an unattended job cannot answer a password prompt. |
 | Google Drive | `rclone:gdrive:restic-backups` | Through rclone: `rclone config` creates the `gdrive` remote, with OAuth in the browser. Slower and quirkier than S3: rate limits make the first backup and big prunes slow. **The OAuth token can expire or be revoked**, which breaks unattended runs, so the failure alert is not optional here. 15 GB free, shared with Gmail and Photos. |
 | Local folder, USB disk, NAS | `/path/to/restic-code` | The fast copy, and the one restores come from. On removable or network storage, set `REQUIRE_MOUNT`. Otherwise an unmounted disk makes restic write into the empty mount point on the system disk, and it looks like success. |
+| Rotated offline disk | `/media/vault-usb/restic-code` | The offline **1**. `REQUIRE_MOUNT` plus `OFFLINE=1`: a nightly run skips it quietly while it is unplugged and backs it up when it is connected at 02:00 or when the user runs `code-backup`. Set `MAX_AGE_HOURS` to the rotation interval, for example 840 for five weeks, so `check.sh` fails when the habit lapses. |
+| Append-only rest-server | `rest:https://user:pass@nas.local:8000/code` | Immutable against this machine: `rest-server --append-only` accepts new snapshots and refuses deletes. Pruning runs on the server itself. On the home network it is on-site, so it covers the offline **1**, not the offsite one. Set `IMMUTABLE=1`. |
 
 ## What to write
 
 ```
 ~/.config/code-backup/
-  settings          SOURCES and FORGET_ARGS
+  settings          SOURCES, FORGET_ARGS, MAX_AGE_HOURS
   excludes          one pattern per line
   password          restic password, chmod 600
   repos/<name>.env  one per destination, chmod 600
+  log/              written by the runner and check.sh, read by check.sh
 ~/.local/bin/code-backup
+~/.local/bin/code-backup-check   a copy of this skill's check.sh
 ~/.config/systemd/user/code-backup.service
 ~/.config/systemd/user/code-backup.timer
 ~/.config/systemd/user/code-backup-failed.service
@@ -95,6 +136,7 @@ separate files only if they ask.
 ```bash
 SOURCES=("$HOME/code")
 FORGET_ARGS=(--keep-daily 14 --keep-weekly 8 --keep-monthly 12)
+MAX_AGE_HOURS=48   # check.sh fails a repository whose newest snapshot is older
 # HEARTBEAT_URL=https://hc-ping.com/<uuid>
 ```
 
@@ -134,6 +176,16 @@ export RESTIC_PASSWORD_FILE="$HOME/.config/code-backup/password"
 export REQUIRE_MOUNT=/media/backup   # only when it is a separate or removable disk
 ```
 
+Flags `check.sh` reads from a repository's env file, beyond the restic variables:
+
+| Flag | Meaning |
+|---|---|
+| `REQUIRE_MOUNT=<dir>` | lives on a separate disk; never written when that disk is not mounted |
+| `OFFLINE=1` | unplugged between backups: being absent is expected, not a failure |
+| `IMMUTABLE=1` | this machine cannot delete from it (append-only, object lock) |
+| `OFFSITE=1` / `OFFSITE=0` | overrides the guess from the address, e.g. a disk kept at the office |
+| `MAX_AGE_HOURS=<n>` | overrides the freshness limit from `settings` |
+
 `~/.local/bin/code-backup`. Each destination runs in its own subshell, so one failing (the
 disk is unplugged, the token expired) never stops the other. That is why there are two
 copies.
@@ -145,9 +197,13 @@ set -uo pipefail
 CONF="${XDG_CONFIG_HOME:-$HOME/.config}/code-backup"
 source "$CONF/settings"
 
+# 0 = backed up, 2 = an offline disk that is away (expected), anything else = failed.
 run() {
   source "$1"
   if [ -n "${REQUIRE_MOUNT:-}" ] && ! mountpoint -q "$REQUIRE_MOUNT"; then
+    # A rotated offline disk is meant to be away. check.sh notices when it has
+    # been away for too long.
+    [ "${OFFLINE:-0}" = 1 ] && { echo "offline copy not connected — skipped"; return 2; }
     echo "$REQUIRE_MOUNT is not mounted" >&2
     return 1
   fi
@@ -160,10 +216,16 @@ run() {
 }
 
 failed=0
+mkdir -p "$CONF/log"
 for env in "$CONF"/repos/*.env; do
   name="$(basename "$env" .env)"
   echo "── $name"
-  ( run "$env" ) || { echo "✗ $name failed" >&2; failed=1; }
+  ( run "$env" ); rc=$?
+  case "$rc" in
+    0) echo "$(date +%s) $name ok" >> "$CONF/log/backups" ;;   # check.sh reads this
+    2) ;;
+    *) echo "✗ $name failed" >&2; failed=1 ;;
+  esac
 done
 
 if [ -n "${HEARTBEAT_URL:-}" ]; then
@@ -233,16 +295,48 @@ User timers only run while the user's service manager is up. For runs while logg
    `journalctl --user -u code-backup -e`. The first offsite run can take hours on a slow
    uplink; later ones take minutes.
 4. `restic snapshots` on **each** destination.
-5. **Restore one file** to a scratch directory and diff it against the original:
-   `restic restore latest --target /tmp/restore-test --include <a path under SOURCES>`.
-   A backup that has never been restored is a hope, not a backup.
-6. `systemctl --user enable --now code-backup.timer` and `systemctl --user list-timers code-backup.timer`.
+5. `cp <this skill>/check.sh ~/.local/bin/code-backup-check && chmod +x` it, then
+   `code-backup-check --restore-test`. It restores one file from each repository, compares
+   it byte for byte, and logs the result. A backup that has never been restored is a hope,
+   not a backup.
+6. `code-backup-check --integrity` reads back a sample of the stored data.
+7. `systemctl --user enable --now code-backup.timer` and `systemctl --user list-timers code-backup.timer`.
    The next run should show the expected time.
-7. Trigger the alert once, for example with a deliberately wrong `RESTIC_REPOSITORY`, and
+8. Trigger the alert once, for example with a deliberately wrong `RESTIC_REPOSITORY`, and
    watch it fire. Then put the value back.
+9. Run the [checklist](#checklist) and walk the user through every line that is not PASS.
 
-Offer a monthly integrity check:
-`restic check --read-data-subset 5%` per destination, as a second timer or a reminder.
+## Checklist
+
+`code-backup-check` (this skill's `check.sh`) is the answer to "are my backups OK?".
+Run it rather than reasoning about the config, and report its lines as they are.
+
+| Line | Verified by | PASS when |
+|---|---|---|
+| `fresh` | restic's latest snapshot (`--offline`: the runner's log) | each repository has a snapshot newer than `MAX_AGE_HOURS` |
+| `3 copies` | the `repos/*.env` count | the original plus at least 2 repositories |
+| `2 media` | the device under each source and local repository; remote counts as one medium | at least 2 distinct, with no backup on the source's own disk |
+| `1 offsite` | the repository address: public host, rclone, or `OFFSITE=1` | at least one; a `.local` or private-IP host is on-site |
+| `1 offline` | `OFFLINE=1`, or `IMMUTABLE=1` plus an attestation | at least one |
+| `restore tested` | the log of `--restore-test` | each repository restored within 90 days |
+| `integrity` | the log of `--integrity` | each repository checked within 35 days (else WARN) |
+| `password` | the file exists and is mode 600, plus an attestation | stored off this machine |
+| `secrets` | file modes | every env file and the password are 600 |
+| `retention` | `FORGET_ARGS` | a policy is set (else WARN) |
+| `scheduled` | systemd, launchd or crontab | a job runs `code-backup`; linger is on for systemd |
+| `alert` | `OnFailure=` or `HEARTBEAT_URL` | something reports a failed run; a heartbeat also catches one that never started |
+
+**ASK** lines are the ones a script cannot see: whether the password really is in a
+password manager, and whether an "immutable" repository really refuses this machine's
+deletes. Ask the user. Record their answer with
+`code-backup-check --attest password-offsite` or `--attest immutable-<repo>`, never on
+your own assumption.
+
+Offer to make it routine: a monthly reminder in the user's tracker, or a second systemd
+timer running `code-backup-check --integrity && code-backup-check --restore-test`. The
+monthly check reads back a 5% sample. Once a year, read back everything with
+`CHECK_SUBSET=100% code-backup-check --integrity`. Read-back costs egress on some
+providers (not R2), so mention that for large repositories.
 
 ## Other schedulers
 
@@ -285,3 +379,13 @@ The setup the template author runs, which also makes a sensible default:
 - **When:** daily at 02:00, `Persistent=true`
 - **Keep:** 14 daily, 8 weekly, 12 monthly
 - **Alert:** desktop notification on failure
+
+Against [3-2-1-1](#strategy-3-2-1-1) that is **3-2-1**: three copies (the original, the
+local disk, Tigris) on three media, with Tigris offsite. The offline **1** is open. The
+local disk stays mounted, and the Tigris key can delete, so ransomware on this machine
+could reach both. The checklist reports it as a FAIL. Close it with either:
+
+- a second USB disk, plugged in for a backup now and then and stored elsewhere
+  (`OFFLINE=1`, `MAX_AGE_HOURS=840`), or
+- an append-only rest-server on the home NAS (`IMMUTABLE=1`), which runs on its own and
+  needs no habit.

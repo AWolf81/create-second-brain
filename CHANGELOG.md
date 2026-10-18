@@ -20,6 +20,17 @@ Not yet published to npm — scaffold with `install.sh` (see the README). On rel
   via rclone), schedule, retention and a failure alert. It writes only to the machine, never
   to the vault or a work repo. The template ships `.claude/` as `_claude` for the same npm
   reason as the other dotfiles.
+- The backup skill designs to **3-2-1-1**: 3 copies, 2 media, 1 offsite, and 1 offline or
+  immutable. That last copy is the one that stops ransomware, because any repository the
+  backup key can write to, it can also delete. Its `check.sh` turns "are my backups OK?"
+  into a checklist instead of an opinion. It measures freshness, copies, distinct devices,
+  and offsite status (a `.local` or private-IP NAS counts as on-site). It also checks
+  offline or immutable copies, secret file modes, retention, the schedule and the alert.
+  `--restore-test` restores one file per repository and compares it byte for byte;
+  `--integrity` reads a sample of the stored data back. Only the facts no script can see
+  stay ASK until the user confirms them: the password stored elsewhere, a repository
+  that is really immutable. The runner logs each success and skips a rotated offline
+  disk that is away, instead of failing every night.
 - Syncing without git: `.stignore` and `scripts/autopublish.sh`, plus a *Syncing devices*
   section in the vault README. Syncthing syncs the notes to devices that have no git, and
   one hub commits what arrives, rebases onto what git machines pushed, and pushes. The
