@@ -8,6 +8,14 @@ public/
 # already holds.
 .note-dates.tsv
 
+# Syncthing's bookkeeping, and the conflict copies it makes when two devices
+# edit one note. scripts/autopublish.sh refuses to publish while a copy exists;
+# this keeps one from being committed by hand.
+.stfolder/
+.stversions/
+*.sync-conflict-*
+.syncthing.*.tmp
+
 # Obsidian: keep shared settings, ignore per-machine state.
 .obsidian/workspace*
 .obsidian/cache

@@ -1,0 +1,20 @@
+// Syncthing ignore patterns. Synced devices carry notes, never git: .git is
+// written by the hub alone (scripts/autopublish.sh), and syncing it between
+// machines is how a repository gets corrupted.
+.git
+
+// Build output and caches, rebuilt wherever they are needed.
+node_modules
+public
+.quartz
+.note-dates.tsv
+
+// Obsidian's per-device state, the same split as .gitignore.
+.obsidian/workspace*
+.obsidian/cache
+.obsidian/plugins
+.obsidian/community-plugins.json
+
+(?d).DS_Store
+(?d)Thumbs.db
+.stversions

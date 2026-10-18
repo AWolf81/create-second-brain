@@ -42,6 +42,16 @@ else
   note "COG not installed — run ./scripts/add-cog.sh if you want the agent skills"
 fi
 
+# A Syncthing folder that also syncs .git has two writers on one repository, and
+# the corruption shows up later, somewhere else. .stfolder marks the folder.
+if [ -d .stfolder ]; then
+  if grep -qx '\.git' .stignore 2>/dev/null; then
+    ok "Syncthing folder, and .stignore keeps .git out of the sync"
+  else
+    bad ".stfolder present but .stignore does not exclude .git — fix .stignore before the next sync"
+  fi
+fi
+
 if [ -d .obsidian ]; then ok "Obsidian settings present"; else note "no .obsidian/ — the vault still opens, just unconfigured"; fi
 
 # A link has two halves and only one of them is committed. The failure this catches

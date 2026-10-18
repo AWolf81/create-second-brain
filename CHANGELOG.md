@@ -20,6 +20,16 @@ Not yet published to npm — scaffold with `install.sh` (see the README). On rel
   via rclone), schedule, retention and a failure alert. It writes only to the machine, never
   to the vault or a work repo. The template ships `.claude/` as `_claude` for the same npm
   reason as the other dotfiles.
+- Syncing without git: `.stignore` and `scripts/autopublish.sh`, plus a *Syncing devices*
+  section in the vault README. Syncthing syncs the notes to devices that have no git, and
+  one hub commits what arrives, rebases onto what git machines pushed, and pushes. The
+  push triggers the deploy. `.git` never enters the sync: syncing it between machines
+  corrupts it. Machines already on git stay on git, so their commit messages survive. A
+  pass waits for 3 quiet minutes and stops on a `*.sync-conflict-*` copy or on more than
+  20 deletions at once, because a wiped phone folder must not empty the site. It is a
+  one-shot run by a scheduler, not an `inotifywait` loop, so it runs on a NAS too.
+  `--install` sets up a systemd user timer. `doctor.sh` flags a Syncthing folder whose
+  `.stignore` no longer excludes `.git`.
 
 ### Fixed
 

@@ -15,7 +15,7 @@ or `WHERE-THINGS-LIVE.md` belong in `template/CLAUDE.md`. Instructions about `in
 substitution or targets belong here.
 
 The same applies to `README.md` vs `template/README.md`, and to `scripts/` — this repo has
-none, while `template/scripts/` ships seven into every vault.
+none, while `template/scripts/` ships nine into every vault.
 
 ## What `index.js` actually does
 
@@ -44,7 +44,7 @@ nothing ever prompts a fix. Prefer omitting over faking.
 ### Underscore-prefixed files
 
 npm strips a file literally named `.gitignore` from published tarballs, so the template
-ships `_gitignore`, `_obsidian`, `_claude`, `_github`, `_dockerignore`, `_gitlab-ci.yml` and they are
+ships `_gitignore`, `_stignore`, `_obsidian`, `_claude`, `_github`, `_dockerignore`, `_gitlab-ci.yml` and they are
 renamed on the way out via `RENAME`. A new dotfile in the template needs both the
 underscore name **and** a `RENAME` entry, or it silently never arrives.
 
@@ -90,7 +90,7 @@ Then verify:
 - no `__PLACEHOLDER__` survives (`grep -rn '__[A-Z_]*__'`), excluding `__VAULT_PATH__` and
   `__LINKED_REPOS__`, which `link-repo.sh` fills in later by design
 - no `targets/` or `_gitignore` left in the output
-- the dotfiles arrived: `.gitignore`, `.obsidian`, `.claude`, `.github`, `.dockerignore`
+- the dotfiles arrived: `.gitignore`, `.stignore`, `.obsidian`, `.claude`, `.github`, `.dockerignore`
 - `site/quartz.config.yaml` parses as YAML, both with and without `--repo`
 - manifest hashes match the files on disk
 

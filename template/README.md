@@ -146,6 +146,50 @@ Two files both called `README.md` look identical in Obsidian's graph even though
 shows their derived titles. Either give files distinct names, or install the *Front Matter
 Title* community plugin.
 
+## Syncing devices without git
+
+A phone has no business running git, and "remember to push" is a step that gets
+forgotten. [Syncthing](https://syncthing.net) syncs the notes instead, and one machine,
+the **hub**, turns what arrives into commits:
+
+```
+phone ──Syncthing──▶ hub ──git push──▶ remote ──▶ site deploy
+desktop ──git push──▶ remote ──▶ hub (pulls) ──Syncthing──▶ phone
+```
+
+- **Only the hub has `.git` in the Syncthing folder.** `.stignore` keeps it out of the
+  sync. Two machines writing one `.git` corrupts it, sooner or later.
+- **Machines that already use git stay on git.** They are not in the Syncthing cluster.
+  The hub takes their pushes on every pass, so their commit messages survive.
+- **The hub needs to be on most of the time**, so a NAS or a home server fits. A laptop
+  hub only publishes while it is awake.
+
+On the hub, clone the vault, add the clone as a Syncthing folder, share it with your
+devices, then schedule `./scripts/autopublish.sh` every few minutes. On Linux,
+`./scripts/autopublish.sh --install` sets up a systemd timer. For a NAS or cron, the
+script's header has the lines to use. Each pass:
+
+1. waits until nothing has changed for 3 minutes, so a burst of saves becomes one commit
+2. stops if Syncthing left a `*.sync-conflict-*` copy, because choosing the winner is
+   your call
+3. stops if more than 20 files were deleted at once, because a wiped phone folder must
+   not empty the site
+4. commits, rebases onto what other machines pushed, pushes
+
+A stop exits non-zero, which your scheduler reports. The push needs an SSH key that
+works unattended. A deploy key with write access to this one repository is the
+smallest grant that does.
+
+On a **Synology NAS**: install Syncthing (Package Center, or Container Manager), plus
+Git Server for the `git` binary. The Syncthing package runs as its own user, so give it
+read/write on the clone. Running the container with your user's `PUID`/`PGID` avoids
+the problem entirely. If git then refuses the clone with *dubious ownership*, run
+`git config --global --add safe.directory <path>`.
+
+On **Android**, Syncthing-Fork syncs the folder and Obsidian opens it as a vault.
+`./scripts/doctor.sh` checks that `.stignore` still excludes `.git` in any Syncthing
+folder.
+
 ## Backups
 
 **Git and sync are not backups.** Git holds only what you committed *and pushed*.
