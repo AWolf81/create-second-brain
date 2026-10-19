@@ -31,6 +31,13 @@ Not yet published to npm — scaffold with `install.sh` (see the README). On rel
   stay ASK until the user confirms them: the password stored elsewhere, a repository
   that is really immutable. The runner logs each success and skips a rotated offline
   disk that is away, instead of failing every night.
+- The backup runner deals with a `restic mount` that was left open. A mount holds a lock
+  for as long as it is open, so the nightly prune failed against it. Now a mount of the
+  same repository that nothing is using (no shell inside it, no open file, no copy
+  running) is closed automatically. A mount in use is left alone, and that repository
+  fails with the process named, because a restore may be in progress. A failed prune
+  after a good backup now reports "snapshot saved, but forget/prune failed" and still
+  logs the backup, instead of a bare "failed".
 - Syncing without git: `.stignore` and `scripts/autopublish.sh`, plus a *Syncing devices*
   section in the vault README. Syncthing syncs the notes to devices that have no git, and
   one hub commits what arrives, rebases onto what git machines pushed, and pushes. The

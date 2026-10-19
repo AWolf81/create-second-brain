@@ -197,7 +197,53 @@ set -uo pipefail
 CONF="${XDG_CONFIG_HOME:-$HOME/.config}/code-backup"
 source "$CONF/settings"
 
-# 0 = backed up, 2 = an offline disk that is away (expected), anything else = failed.
+# A `restic mount` holds a lock on its repository for as long as it is open,
+# and prune needs the repository to itself. A mount nothing is using was
+# forgotten: close it. One that a shell, an open file or a copy is using is
+# work in progress: leave it, and fail this repository so the alert says why.
+# Linux only (/proc); elsewhere prune simply fails on the lock.
+release_mounts() {
+  [ -d /proc/self ] || return 0
+  local pid a i repo mp p link users
+  for pid in $(pgrep -u "$(id -u)" -x restic); do
+    local args=()
+    while IFS= read -r -d '' a; do args+=("$a"); done < "/proc/$pid/cmdline"
+    [[ " ${args[*]} " == *" mount "* ]] || continue
+    repo=""
+    for i in "${!args[@]}"; do
+      case "${args[$i]}" in
+        -r|--repo) repo="${args[$((i + 1))]:-}" ;;
+        --repo=*)  repo="${args[$i]#--repo=}" ;;
+      esac
+    done
+    [ -n "$repo" ] || repo="$(tr '\0' '\n' < "/proc/$pid/environ" | sed -n 's/^RESTIC_REPOSITORY=//p')"
+    [ "$repo" = "$RESTIC_REPOSITORY" ] || continue
+
+    mp="${args[-1]%/}"
+    [[ "$mp" == /* ]] || mp="$(readlink "/proc/$pid/cwd")/$mp"
+    users=""
+    for p in /proc/[0-9]*; do
+      [ "${p#/proc/}" = "$pid" ] && continue
+      for link in "$p/cwd" "$p/root" "$p"/fd/*; do
+        case "$(readlink "$link" 2>/dev/null)" in
+          "$mp"|"$mp"/*) users+="${p#/proc/} ($(cat "$p/comm" 2>/dev/null)), "; break ;;
+        esac
+      done
+    done
+    if [ -n "$users" ]; then
+      echo "restic mount at $mp is in use by ${users%, } — left open, so this repository is not backed up" >&2
+      return 1
+    fi
+    echo "closing forgotten restic mount at $mp (PID $pid)"
+    fusermount3 -u "$mp" 2>/dev/null || fusermount -u "$mp" 2>/dev/null || umount "$mp" 2>/dev/null \
+      || { echo "could not unmount $mp" >&2; return 1; }
+    for i in $(seq 20); do kill -0 "$pid" 2>/dev/null || break; sleep 0.5; done
+    ! kill -0 "$pid" 2>/dev/null || { echo "restic mount (PID $pid) still running after unmount" >&2; return 1; }
+  done
+}
+
+# 0 = backed up, 2 = an offline disk that is away (expected),
+# 4 = snapshot saved but forget/prune failed, anything else = no snapshot.
 run() {
   source "$1"
   if [ -n "${REQUIRE_MOUNT:-}" ] && ! mountpoint -q "$REQUIRE_MOUNT"; then
@@ -207,24 +253,27 @@ run() {
     echo "$REQUIRE_MOUNT is not mounted" >&2
     return 1
   fi
+  release_mounts || return 1
   restic backup "${SOURCES[@]}" --tag code --exclude-caches --exclude-file "$CONF/excludes"
   rc=$?
   # 3 = snapshot written, but some files could not be read. Worth a look, not a retry.
   [ "$rc" -eq 3 ] && echo "some files were unreadable; the snapshot was still written" >&2
   [ "$rc" -eq 0 ] || [ "$rc" -eq 3 ] || return 1
-  restic forget --tag code "${FORGET_ARGS[@]}" --prune
+  restic forget --tag code "${FORGET_ARGS[@]}" --prune || return 4
 }
 
 failed=0
 mkdir -p "$CONF/log"
+saved() { echo "$(date +%s) $1 ok" >> "$CONF/log/backups"; }   # check.sh reads this
 for env in "$CONF"/repos/*.env; do
   name="$(basename "$env" .env)"
   echo "── $name"
   ( run "$env" ); rc=$?
   case "$rc" in
-    0) echo "$(date +%s) $name ok" >> "$CONF/log/backups" ;;   # check.sh reads this
+    0) saved "$name" ;;
     2) ;;
-    *) echo "✗ $name failed" >&2; failed=1 ;;
+    4) saved "$name"; echo "✗ $name: snapshot saved, but forget/prune failed" >&2; failed=1 ;;
+    *) echo "✗ $name: no snapshot saved" >&2; failed=1 ;;
   esac
 done
 
