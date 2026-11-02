@@ -177,6 +177,17 @@ case "$TARGET" in
     ;;
 esac
 
+# A [Source: claude-code:…] line is only as durable as the transcript it names.
+claude_settings="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"
+if [ -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]; then
+  if grep -q '"cleanupPeriodDays"' "$claude_settings" 2>/dev/null; then
+    ok "Claude Code transcript retention is set explicitly"
+  else
+    note "Claude Code deletes transcripts after 30 days, so notes citing a session lose their"
+    note "evidence. Set a long \"cleanupPeriodDays\" in $claude_settings (not 0)."
+  fi
+fi
+
 echo
 [ "$fail" -eq 0 ] && echo "All checks passed." || echo "Some checks failed — see above."
 exit "$fail"

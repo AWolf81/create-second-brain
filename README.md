@@ -77,6 +77,8 @@ blank), `--yes` (skip the prompts).
 
 **Evidence it gets read.** A user-level hook records which notes agents actually open, so "the agent consulted the vault" is checkable instead of asserted — and `vault-usage.sh` names the notes nothing has ever opened. Paths and timestamps only; never the question or the answer.
 
+**A knowledge base, not a chat archive.** Whole conversations stay where they were written. The `conversation-harvest` skill finds the Claude Code or claude.ai chats that mattered, records a one-line pointer, and proposes only the lesson that transfers, for you to approve. Loading everything makes agents worse and automatic summaries lose evidence; [the research](research/capture-vs-curation.md) is in this repo.
+
 **Edit on your phone, publish without pushing.** Syncthing carries notes to and from devices with no git; one hub turns what arrives into commits with `scripts/autopublish.sh` — debounced, refusing to publish a sync conflict or a mass deletion — and the push deploys the site. Machines already on git stay on git.
 
 **Backups, set up by conversation.** Git and sync are not backups; uncommitted and unpushed work is the gap. The vault ships a `code-backup` skill rather than a script: ask the agent to set up backups, and it writes a restic job for *this* machine. Local folder, Fly Tigris, B2, R2, Hetzner Storage Box or Google Drive, one copy or several. Nothing is committed anywhere.

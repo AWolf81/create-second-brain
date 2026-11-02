@@ -12,6 +12,10 @@ Not yet published to npm — scaffold with `install.sh` (see the README). On rel
 
 ### Added
 
+- A `conversation-harvest` skill, a *Conversations stay out* section in `WHERE-THINGS-LIVE.md`,
+  and a `doctor.sh` note when Claude Code transcripts are on default retention. Chats stay where
+  they were written, the vault keeps a pointer and the lesson that transfers. Reasoning and
+  evidence are in `research/capture-vs-curation.md`.
 - A `code-backup` skill in `.claude/skills/`, plus a *Backups* section in the vault README.
   Git and Syncthing are not backups: uncommitted and unpushed work is exactly what they
   miss. Backup is still not template machinery, because a script that fits one person's

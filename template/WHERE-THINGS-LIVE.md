@@ -17,6 +17,7 @@ Each domain has exactly one authority. Read from it; do not copy it here.
 | Durable lessons | **this vault** | `05-knowledge/` | the product repo |
 | Project status and orientation | **this vault** | `04-projects/<name>/` | anywhere else |
 | Decisions and their rationale | `<wherever you record decisions>` | | |
+| Agent conversations, papers | where they were written | search on demand, `conversation-harvest` | this vault |
 
 When a note needs to point at implementation detail, **link to the path in its own
 repository** rather than copying it. Copies rot; the source does not.
@@ -49,6 +50,15 @@ you copied instead of extracting.
 
 Specifics stay where they were written. The transferable sentence moves. Nothing flows
 back: this vault never becomes the place plans are written.
+
+## Conversations stay out
+
+Whole chats, transcripts, summaries of them and PDFs do not enter this vault. Keep a one-line
+pointer in `04-projects/<name>/conversations.md` for a conversation that mattered, and promote
+only the lesson that passes the test above, with what it was decided against and why, naming
+its session or chat id as the source. The `conversation-harvest` skill does this, and only with
+approval: repeated automatic summarising degrades a knowledge base, and raw history stays the
+better evidence.
 
 ## Rules of engagement
 
