@@ -1,6 +1,6 @@
 {
   "name": "@awolf81/create-second-brain",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Agent-first knowledge vault — markdown your AI agents read and write, published privately with an Obsidian-style graph view.",
   "type": "module",
   "bin": { "create-second-brain": "index.js" },

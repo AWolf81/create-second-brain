@@ -10,6 +10,11 @@ Not yet published to npm — scaffold with `install.sh` (see the README). On rel
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-02
+
+Still not on npm, so `install.sh` remains the supported way to scaffold a vault. Existing vaults
+pick all of this up with `./scripts/update-template.sh`.
+
 ### Added
 
 - A `conversation-harvest` skill, a *Conversations stay out* section in `WHERE-THINGS-LIVE.md`,
@@ -199,5 +204,6 @@ vault; `pnpm create @awolf81/second-brain` becomes the shorter equivalent once p
   `X-Robots-Tag: noindex, nofollow, noarchive`.
 - Caddy logs at `ERROR` only, so note titles do not reach the platform log stream.
 
-[Unreleased]: https://github.com/AWolf81/create-second-brain/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/AWolf81/create-second-brain/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/AWolf81/create-second-brain/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/AWolf81/create-second-brain/releases/tag/v0.1.0
